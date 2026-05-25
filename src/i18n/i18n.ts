@@ -1,5 +1,6 @@
 import enTranslations from "../../locales/en.json";
 import jaTranslations from "../../locales/ja.json";
+import koTranslations from "../../locales/ko.json";
 import type { TranslationMap } from "../types";
 
 export class I18n {
@@ -10,7 +11,8 @@ export class I18n {
     this.locale = locale;
     this.translations = {
       ja: jaTranslations as TranslationMap,
-      en: enTranslations as TranslationMap
+      en: enTranslations as TranslationMap,
+      ko: koTranslations as TranslationMap
     };
 
     if (customTranslations) {

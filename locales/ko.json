@@ -30,7 +30,7 @@
   "shortcut.moveLeft": "왼쪽으로 이동",
   "shortcut.moveRight": "오른쪽으로 이동",
   "shortcut.autoPageTurnLabel": "자동재생",
-  "shortcut.pageModeToggle": "스프레드 토글",
+  "shortcut.pageModeToggle": "보기 모드 토글",
   "seek.previewAlt": "{{page}} 페이지 미리보기",
   "loading": "로딩",
   "error.pageRequestFailed": "{{page}} 페이지 요청 실패"

@@ -2,10 +2,7 @@
 
 ![comimi バナー画像](assets/banner.png)
 
-<!-- Readme language -->
-<div align="center">
-[English](README_en.md) | [한국어](README_ko.md)
-</div>
+[English](./README_en.md) | [한국어](./README_ko.md)
 
 comimiは、Webサイトに漫画ビューワーを組み込むことができるTypeScript/JavaScriptライブラリです。
 

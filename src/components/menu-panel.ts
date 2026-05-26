@@ -1,5 +1,5 @@
 import { I18n } from "../i18n/i18n";
-import type { ViewerState } from "../types";
+import type { MascotOption, ViewerState } from "../types";
 import type { RendererCallbacks } from "../renderer/renderer-callbacks";
 import { icon } from "./icons";
 import { renderRabbitMascot } from "./rabbit-mascot";
@@ -24,7 +24,10 @@ export class MenuPanel {
   constructor(
     private callbacks: RendererCallbacks,
     private i18n: I18n,
-    private options: { lockLayoutMode?: boolean } = {}
+    private options: {
+      lockLayoutMode?: boolean;
+      mascot?: MascotOption;
+    } = {}
   ) {
     this.root = document.createElement("div");
     this.root.className = "comimi-menu-panel";
@@ -51,7 +54,11 @@ export class MenuPanel {
     [this.viewPageList, this.pageListInner] = this.buildPageListView();
 
     this.bottomEl.append(border, this.viewMenu, this.viewShortcut, this.viewPageList);
-    this.root.append(background, renderRabbitMascot(), top, this.bottomEl);
+    const mascot = renderRabbitMascot(this.options.mascot);
+    const children: Node[] = [background];
+    if (mascot) children.push(mascot);
+    children.push(top, this.bottomEl);
+    this.root.append(...children);
   }
 
   getElement(): HTMLElement {

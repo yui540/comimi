@@ -96,6 +96,10 @@ interface MangaViewerOptions {
     isSpread: boolean;
   }) => string | Promise<string>;
   lockLayoutMode?: boolean;
+  mascot?:
+    | { src: string; alt?: string }
+    | { render: () => HTMLElement }
+    | false;
 }
 ```
 
@@ -290,6 +294,65 @@ createMangaViewer(container, {
 - **Blob URL の revoke はライブラリ側で行いません。** 利用側で自前管理してください
 - 解決結果は `manga.id + page.id` 単位でキャッシュされるので、`isSpread` が後から変わっても再解決は走りません。レイアウトに応じて解像度を変えたい場合は、利用側で別キーで管理してください
 - CORS: 通常 URL を返す場合は元の `<img>` 経路と同じ制約
+
+## マスコット画像の差し替え
+
+`mascot` オプションで、コントロールドック・メニュー・スプラッシュ画面のうさぎイラストを任意の画像に置き換えられます。
+
+```ts
+type MascotOption =
+  | { src: string; alt?: string }      // 画像 URL で差し替え
+  | { render: () => HTMLElement }       // 完全カスタム
+  | false;                              // 非表示
+```
+
+- 未指定 → デフォルトのうさぎ SVG
+- `{ src }` → `<img>` に変換して表示
+- `{ render }` → 関数が返す `HTMLElement` を表示（毎回呼ばれるので、コントロールドック / メニュー / スプラッシュで別インスタンス）
+- `false` → マスコットおよびスプラッシュのロゴ部分を非表示
+
+スプラッシュ画面では、`mascot` が指定されているとデフォルトの「うさぎロゴ + comimi タイポ」が消え、120×120 のカスタムアイコンのみが表示されます。
+
+### 例: 画像 URL で差し替え
+
+```ts
+createMangaViewer(container, {
+  manga,
+  mascot: { src: "/assets/my-mascot.png", alt: "Site mascot" }
+});
+```
+
+### 例: SVG を直接埋め込み
+
+```ts
+const ICON_SVG = `<svg viewBox="0 0 50 50" ...>...</svg>`;
+
+createMangaViewer(container, {
+  manga,
+  mascot: {
+    render: () => {
+      const wrap = document.createElement("div");
+      wrap.innerHTML = ICON_SVG;
+      return wrap.firstElementChild as HTMLElement;
+    }
+  }
+});
+```
+
+### 例: マスコットを非表示にする
+
+```ts
+createMangaViewer(container, {
+  manga,
+  mascot: false
+});
+```
+
+### 配置とサイズ
+
+- コントロールドック / メニューパネル内のマスコット枠は `50×50`（`aspect-ratio: 1/1`）
+- スプラッシュ画面のロゴ差し替え枠は `120×120`
+- 中身は `width:100% / height:100% / object-fit: contain` で枠にフィット
 
 ## イベント
 

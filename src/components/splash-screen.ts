@@ -1,17 +1,23 @@
 import { I18n } from "../i18n/i18n";
+import type { MascotOption } from "../types";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 
-export function renderSplashScreen(i18n: I18n): HTMLElement {
+export function renderSplashScreen(
+  i18n: I18n,
+  mascot?: MascotOption
+): HTMLElement {
   const wrap = document.createElement("div");
   wrap.className = "comimi-splash";
 
   const logoWrap = document.createElement("div");
   logoWrap.className = "comimi-splash-logo-wrap";
+  if (mascot) {
+    logoWrap.classList.add("comimi-splash-logo-wrap-custom");
+  }
 
-  const logo = document.createElement("div");
-  logo.className = "comimi-splash-logo";
-  logo.append(renderSplashSymbol(), renderSplashTypo());
+  const logo = buildSplashLogo(mascot);
+  if (logo) logoWrap.append(logo);
 
   const text = document.createElement("div");
   text.className = "comimi-splash-text";
@@ -22,12 +28,39 @@ export function renderSplashScreen(i18n: I18n): HTMLElement {
     text.append(dot);
   }
 
-  logoWrap.append(logo, text);
+  logoWrap.append(text);
   wrap.append(logoWrap);
   return wrap;
 }
 
-function renderSplashSymbol(): SVGSVGElement {
+function buildSplashLogo(option?: MascotOption): HTMLElement | null {
+  if (option === false) {
+    return null;
+  }
+
+  if (option) {
+    const customLogo = document.createElement("div");
+    customLogo.className = "comimi-splash-custom-logo";
+
+    if ("render" in option) {
+      customLogo.append(option.render());
+    } else {
+      const img = document.createElement("img");
+      img.src = option.src;
+      img.alt = option.alt ?? "";
+      img.draggable = false;
+      customLogo.append(img);
+    }
+    return customLogo;
+  }
+
+  const logo = document.createElement("div");
+  logo.className = "comimi-splash-logo";
+  logo.append(buildDefaultSplashSymbol(), renderSplashTypo());
+  return logo;
+}
+
+function buildDefaultSplashSymbol(): SVGSVGElement {
   const svg = document.createElementNS(SVG_NS, "svg");
   svg.setAttribute("viewBox", "0 0 112.19 99.01");
   svg.setAttribute("class", "comimi-splash-symbol");

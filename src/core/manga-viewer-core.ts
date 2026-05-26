@@ -83,7 +83,8 @@ export class MangaViewerCore implements MangaViewerInstance {
       this.i18n,
       options.className,
       options.resolvePageSrc,
-      this.lockLayoutMode
+      this.lockLayoutMode,
+      options.mascot
     );
 
     for (const [eventName, handler] of Object.entries(

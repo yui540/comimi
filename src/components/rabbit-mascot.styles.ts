@@ -1,15 +1,20 @@
 export const rabbitMascotStyles = `
 .comimi-rabbit {
   position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 50px;
+  aspect-ratio: 1 / 1;
   z-index: 0;
   pointer-events: none;
 }
 
-.comimi-rabbit-svg {
+.comimi-rabbit > * {
   display: block;
   width: 100%;
-  height: auto;
+  height: 100%;
+  object-fit: contain;
 }
 
 .comimi-controls-dock > .comimi-rabbit {
@@ -19,8 +24,8 @@ export const rabbitMascotStyles = `
 }
 
 .comimi-menu-panel > .comimi-rabbit {
-  top: 20px;
   right: 20px;
+  bottom: 0;
 }
 
 @media (max-width: 767px) {

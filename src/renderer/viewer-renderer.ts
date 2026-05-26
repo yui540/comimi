@@ -16,7 +16,7 @@ import { renderSplashScreen } from "../components/splash-screen";
 import { createViewerRoot } from "../components/viewer-root";
 import { I18n } from "../i18n/i18n";
 import { ensureViewerStyles } from "../styles/style-registry";
-import type { PageSrcResolver, ViewerState } from "../types";
+import type { MascotOption, PageSrcResolver, ViewerState } from "../types";
 import type { RendererCallbacks } from "./renderer-callbacks";
 
 interface DragStart {
@@ -56,7 +56,8 @@ export class ViewerRenderer {
     private i18n: I18n,
     className?: string,
     resolvePageSrc?: PageSrcResolver,
-    private lockLayoutMode = false
+    private lockLayoutMode = false,
+    private mascot?: MascotOption
   ) {
     ensureViewerStyles();
     this.pageStage = new PageStage({
@@ -115,14 +116,15 @@ export class ViewerRenderer {
 
     if (!this.menuPanel) {
       this.menuPanel = new MenuPanel(this.callbacks, this.i18n, {
-        lockLayoutMode: this.lockLayoutMode
+        lockLayoutMode: this.lockLayoutMode,
+        mascot: this.mascot
       });
     }
     if (!this.viewModeSwitcher && !this.lockLayoutMode) {
       this.viewModeSwitcher = new ViewModeSwitcher(this.callbacks, this.i18n);
     }
     if (!this.controlsDock) {
-      this.controlsDock = new ControlsDock(this.callbacks, this.i18n);
+      this.controlsDock = new ControlsDock(this.callbacks, this.i18n, this.mascot);
     }
     const stageEl = this.pageStage.getElement();
     const menuPanelEl = this.menuPanel.getElement();
@@ -215,7 +217,7 @@ export class ViewerRenderer {
       return;
     }
 
-    this.splash = renderSplashScreen(this.i18n);
+    this.splash = renderSplashScreen(this.i18n, this.mascot);
     this.root.append(this.splash);
     this.splashRemoveTimer = window.setTimeout(() => {
       this.splash?.remove();

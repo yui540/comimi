@@ -36,6 +36,31 @@ export const splashScreenStyles = `
   transform-origin: center bottom;
 }
 
+.comimi-splash-logo-wrap-custom {
+  width: 120px;
+  aspect-ratio: 1 / 1;
+}
+
+.comimi-splash-logo-wrap-custom .comimi-splash-text {
+  transform: translate(-50%, calc(100% + 16px));
+}
+
+.comimi-splash-custom-logo {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 120px;
+  aspect-ratio: 1 / 1;
+}
+
+.comimi-splash-custom-logo > * {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
 .comimi-splash-typo-wrap {
   position: absolute;
   right: 7px;

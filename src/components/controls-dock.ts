@@ -1,5 +1,10 @@
 import { I18n } from "../i18n/i18n";
-import type { MangaPage, PageTurnMode, ViewerState } from "../types";
+import type {
+  MangaPage,
+  MascotOption,
+  PageTurnMode,
+  ViewerState
+} from "../types";
 import type { RendererCallbacks } from "../renderer/renderer-callbacks";
 import { icon, type IconName } from "./icons";
 import { getPageIndexesForPageIndex } from "./page-layout";
@@ -46,7 +51,8 @@ export class ControlsDock {
 
   constructor(
     private callbacks: RendererCallbacks,
-    private i18n: I18n
+    private i18n: I18n,
+    private mascot?: MascotOption
   ) {
     this.root = document.createElement("div");
     this.root.className = "comimi-controls-dock";
@@ -56,7 +62,11 @@ export class ControlsDock {
     const bg = document.createElement("div");
     bg.className = "comimi-controls-bg";
 
-    this.root.append(bg, renderRabbitMascot(), this.buildSeek(), this.buildRow());
+    const mascotEl = renderRabbitMascot(this.mascot);
+    const children: Node[] = [bg];
+    if (mascotEl) children.push(mascotEl);
+    children.push(this.buildSeek(), this.buildRow());
+    this.root.append(...children);
   }
 
   getElement(): HTMLElement {

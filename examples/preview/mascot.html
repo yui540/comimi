@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Manga Viewer Preview — Custom mascot</title>
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: #eee;
+        color: #333;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+      }
+
+      main {
+        width: 100%;
+        margin: 0 auto;
+        padding: 60px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div id="viewer"></div>
+    </main>
+    <script type="module" src="/src/mascot.ts"></script>
+  </body>
+</html>

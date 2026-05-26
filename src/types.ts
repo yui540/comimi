@@ -95,7 +95,13 @@ export interface MangaViewerOptions {
   events?: Partial<ViewerEventHandlersMap>;
   resolvePageSrc?: PageSrcResolver;
   lockLayoutMode?: boolean;
+  mascot?: MascotOption;
 }
+
+export type MascotOption =
+  | { src: string; alt?: string }
+  | { render: () => HTMLElement }
+  | false;
 
 export interface PageSrcContext {
   page: ImagePage;

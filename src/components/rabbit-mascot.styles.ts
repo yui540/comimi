@@ -2,6 +2,7 @@ export const rabbitMascotStyles = `
 .comimi-rabbit {
   position: absolute;
   width: 50px;
+  z-index: 0;
   pointer-events: none;
 }
 

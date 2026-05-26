@@ -56,7 +56,7 @@ export class ControlsDock {
     const bg = document.createElement("div");
     bg.className = "comimi-controls-bg";
 
-    this.root.append(bg, this.buildSeek(), this.buildRow(), renderRabbitMascot());
+    this.root.append(bg, renderRabbitMascot(), this.buildSeek(), this.buildRow());
   }
 
   getElement(): HTMLElement {

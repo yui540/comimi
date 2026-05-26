@@ -24,8 +24,8 @@ export const rabbitMascotStyles = `
 }
 
 .comimi-menu-panel > .comimi-rabbit {
+  top: 12px;
   right: 20px;
-  bottom: 0;
 }
 
 @media (max-width: 767px) {

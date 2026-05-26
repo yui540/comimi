@@ -1,7 +1,8 @@
 import { I18n } from "../i18n/i18n";
-import type { PageTurnMode, ViewerState } from "../types";
+import type { MangaPage, PageTurnMode, ViewerState } from "../types";
 import type { RendererCallbacks } from "../renderer/renderer-callbacks";
 import { icon, type IconName } from "./icons";
+import { getPageIndexesForPageIndex } from "./page-layout";
 import { renderRabbitMascot } from "./rabbit-mascot";
 import { SettingsPanel } from "./settings-panel";
 
@@ -13,6 +14,11 @@ export class ControlsDock {
   private seekBar!: HTMLDivElement;
   private seekFill!: HTMLDivElement;
   private seekInput!: HTMLInputElement;
+  private seekPreview!: HTMLDivElement;
+  private seekPreviewThumbs!: HTMLDivElement;
+  private seekPreviewLabel!: HTMLDivElement;
+  private seekPreviewKey?: string;
+  private currentState?: ViewerState;
 
   private autoplayContainer!: HTMLDivElement;
   private autoplayButton!: HTMLButtonElement;
@@ -58,6 +64,7 @@ export class ControlsDock {
   }
 
   update(state: ViewerState, isMobile: boolean): void {
+    this.currentState = state;
     this.root.dataset.autoplay = String(state.autoPageTurnEnabled);
 
     // Seek
@@ -165,9 +172,89 @@ export class ControlsDock {
       this.callbacks.goToPage(Number(this.seekInput.value));
     });
 
-    this.seekBar.append(seekTrack, this.seekInput);
+    this.seekPreview = document.createElement("div");
+    this.seekPreview.className = "comimi-seek-preview";
+    this.seekPreview.dataset.show = "false";
+
+    this.seekPreviewThumbs = document.createElement("div");
+    this.seekPreviewThumbs.className = "comimi-seek-preview-thumbs";
+
+    this.seekPreviewLabel = document.createElement("div");
+    this.seekPreviewLabel.className = "comimi-seek-preview-label";
+
+    this.seekPreview.append(this.seekPreviewThumbs, this.seekPreviewLabel);
+
+    this.seekBar.addEventListener("mousemove", (event) =>
+      this.updateSeekPreview(event)
+    );
+    this.seekBar.addEventListener("mouseleave", () => {
+      this.seekPreview.dataset.show = "false";
+    });
+
+    this.seekBar.append(seekTrack, this.seekInput, this.seekPreview);
     wrap.append(textWrap, this.seekBar);
     return wrap;
+  }
+
+  private updateSeekPreview(event: MouseEvent): void {
+    const state = this.currentState;
+    if (!state) return;
+    const total = state.manga.pages.length;
+    if (total === 0) return;
+
+    const rect = this.seekBar.getBoundingClientRect();
+    if (rect.width === 0) return;
+    const x = Math.max(0, Math.min(rect.width, event.clientX - rect.left));
+    const rawRatio = x / rect.width;
+    const ratio =
+      state.settings.readingDirection === "rtl" ? 1 - rawRatio : rawRatio;
+    const targetIndex = Math.min(
+      total - 1,
+      Math.max(0, Math.floor(ratio * total))
+    );
+    const indexes = getPageIndexesForPageIndex(state, targetIndex, false);
+    const pages = indexes
+      .map((index) => state.manga.pages[index])
+      .filter((page): page is MangaPage => Boolean(page));
+
+    this.refreshSeekPreviewThumbs(indexes, pages);
+
+    const sorted = [...indexes].sort((a, b) => a - b);
+    this.seekPreviewLabel.textContent =
+      sorted.length > 1
+        ? `${sorted[0] + 1} - ${sorted[sorted.length - 1] + 1}`
+        : String(sorted[0] + 1);
+    this.seekPreview.style.left = `${x}px`;
+    this.seekPreview.dataset.show = "true";
+  }
+
+  private refreshSeekPreviewThumbs(
+    indexes: number[],
+    pages: MangaPage[]
+  ): void {
+    const key = indexes.join(",");
+    if (this.seekPreviewKey === key) return;
+    this.seekPreviewKey = key;
+
+    this.seekPreviewThumbs.replaceChildren();
+    for (const page of pages) {
+      const thumb = document.createElement("div");
+      thumb.className = "comimi-seek-preview-thumb";
+      if (page.type === "image") {
+        const img = document.createElement("img");
+        img.src = page.thumbnailSrc ?? page.src;
+        img.alt = "";
+        img.draggable = false;
+        thumb.append(img);
+        thumb.dataset.kind = "image";
+      } else {
+        const text = document.createElement("span");
+        text.textContent = this.i18n.t("pageList.htmlContent");
+        thumb.append(text);
+        thumb.dataset.kind = "html";
+      }
+      this.seekPreviewThumbs.append(thumb);
+    }
   }
 
   private buildRow(): HTMLDivElement {

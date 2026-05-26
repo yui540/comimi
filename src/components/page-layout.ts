@@ -135,7 +135,7 @@ function getPageIndexesAtDistance(
   return indexes;
 }
 
-function getPageIndexesForPageIndex(
+export function getPageIndexesForPageIndex(
   state: ViewerState,
   pageIndex: number,
   isMobile: boolean

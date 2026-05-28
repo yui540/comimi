@@ -69,6 +69,10 @@ export const pageStageStyles = `
   -webkit-touch-callout: none;
 }
 
+.comimi-page img {
+  pointer-events: none;
+}
+
 .comimi-page[data-spread="true"] img,
 .comimi-page[data-spread="true"] .comimi-html-page {
   width: 100%;

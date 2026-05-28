@@ -141,6 +141,7 @@ export class PageStage {
     img.addEventListener("error", () => {
       slot.replaceChildren(renderErrorIcon(this.options.i18n, pageIndex + 1));
     });
+    img.addEventListener("contextmenu", (event) => event.preventDefault());
     slot.append(img);
 
     const imageKey = `${state.manga.id}:${page.id}`;

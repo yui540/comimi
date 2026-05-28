@@ -55,9 +55,18 @@ export class MangaViewerCore implements MangaViewerInstance {
     );
 
     const callbacks: RendererCallbacks = {
-      goToPage: (pageIndex) => this.goToPage(pageIndex),
-      nextPage: () => this.nextPage(),
-      previousPage: () => this.previousPage(),
+      goToPage: (pageIndex) => {
+        if (this.store.getState().autoPageTurnEnabled) return;
+        this.goToPage(pageIndex);
+      },
+      nextPage: () => {
+        if (this.store.getState().autoPageTurnEnabled) return;
+        this.nextPage();
+      },
+      previousPage: () => {
+        if (this.store.getState().autoPageTurnEnabled) return;
+        this.previousPage();
+      },
       commitNextPage: () => this.commitNextPage(),
       commitPreviousPage: () => this.commitPreviousPage(),
       toggleOverlay: (force) => this.toggleOverlay(force),
@@ -407,6 +416,7 @@ export class MangaViewerCore implements MangaViewerInstance {
   }
 
   private moveFromKey(side: "left" | "right"): void {
+    if (this.store.getState().autoPageTurnEnabled) return;
     const direction = this.store.getState().settings.readingDirection;
     if (direction === "rtl") {
       side === "left" ? this.nextPage() : this.previousPage();
@@ -471,7 +481,7 @@ export class MangaViewerCore implements MangaViewerInstance {
         this.toggleAutoPageTurn();
         return;
       }
-      this.nextPage();
+      this.commitNextPage();
     }, this.store.getState().settings.autoPageTurnIntervalMs);
   }
 

@@ -1,6 +1,7 @@
 export const scrollFadeStyles = `
 .comimi-scrollfade {
   position: relative;
+  overscroll-behavior: contain;
 }
 
 .comimi-scrollfade::before,

@@ -14,6 +14,7 @@ export function renderArrowButtons({
   const fragment = document.createElement("div");
   fragment.className = "comimi-arrows";
   fragment.dataset.overlay = String(state.overlayVisible);
+  fragment.dataset.autoplay = String(state.autoPageTurnEnabled);
 
   fragment.append(
     renderArrowButton("prev", () => moveFromSide(state, callbacks, "left")),

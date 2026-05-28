@@ -35,7 +35,8 @@ export const arrowButtonsStyles = `
     opacity 0.3s linear;
 }
 
-.comimi-arrows[data-overlay="false"] .comimi-arrow-next .comimi-arrow-inner {
+.comimi-arrows[data-overlay="false"] .comimi-arrow-next .comimi-arrow-inner,
+.comimi-arrows[data-autoplay="true"] .comimi-arrow-next .comimi-arrow-inner {
   transform: translateX(35px);
   opacity: 0;
   transition:
@@ -43,7 +44,8 @@ export const arrowButtonsStyles = `
     opacity 0.15s linear;
 }
 
-.comimi-arrows[data-overlay="false"] .comimi-arrow-prev .comimi-arrow-inner {
+.comimi-arrows[data-overlay="false"] .comimi-arrow-prev .comimi-arrow-inner,
+.comimi-arrows[data-autoplay="true"] .comimi-arrow-prev .comimi-arrow-inner {
   transform: translateX(-35px);
   opacity: 0;
   transition:
@@ -51,7 +53,8 @@ export const arrowButtonsStyles = `
     opacity 0.15s linear;
 }
 
-.comimi-arrows[data-overlay="false"] {
+.comimi-arrows[data-overlay="false"],
+.comimi-arrows[data-autoplay="true"] {
   pointer-events: none;
 }
 

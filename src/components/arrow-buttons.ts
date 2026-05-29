@@ -1,4 +1,5 @@
 import { icon } from "./icons";
+import { getPageStep } from "../defaults";
 import type { RendererCallbacks } from "../renderer/renderer-callbacks";
 import type { ReadingDirection, ViewerState } from "../types";
 
@@ -17,8 +18,12 @@ export function renderArrowButtons({
   fragment.dataset.autoplay = String(state.autoPageTurnEnabled);
 
   fragment.append(
-    renderArrowButton("prev", () => moveFromSide(state, callbacks, "left")),
-    renderArrowButton("next", () => moveFromSide(state, callbacks, "right"))
+    renderArrowButton("prev", state, () =>
+      moveFromSide(state, callbacks, "left")
+    ),
+    renderArrowButton("next", state, () =>
+      moveFromSide(state, callbacks, "right")
+    )
   );
 
   return fragment;
@@ -26,6 +31,7 @@ export function renderArrowButtons({
 
 function renderArrowButton(
   variant: "prev" | "next",
+  state: ViewerState,
   onClick: () => void
 ): HTMLButtonElement {
   const button = document.createElement("button");
@@ -35,6 +41,11 @@ function renderArrowButton(
     "aria-label",
     variant === "next" ? "Next page" : "Previous page"
   );
+
+  const side = variant === "prev" ? "left" : "right";
+  if (!canMoveFromSide(state, side)) {
+    button.dataset.disabled = "true";
+  }
   button.addEventListener("click", (event) => {
     event.stopPropagation();
     onClick();
@@ -68,4 +79,14 @@ function isNextSide(
   direction: ReadingDirection
 ): boolean {
   return direction === "rtl" ? side === "left" : side === "right";
+}
+
+function canMoveFromSide(state: ViewerState, side: "left" | "right"): boolean {
+  const isNext = isNextSide(side, state.settings.readingDirection);
+  const { currentPageIndex } = state;
+  if (isNext) {
+    const step = getPageStep(state.settings, currentPageIndex);
+    return currentPageIndex + step < state.manga.pages.length;
+  }
+  return currentPageIndex > 0;
 }

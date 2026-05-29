@@ -58,6 +58,26 @@ export const arrowButtonsStyles = `
   pointer-events: none;
 }
 
+.comimi-arrow-button[data-disabled="true"] {
+  pointer-events: none;
+}
+
+.comimi-arrow-next[data-disabled="true"] .comimi-arrow-inner {
+  transform: translateX(35px);
+  opacity: 0;
+  transition:
+    transform 0.3s var(--comimi-spring),
+    opacity 0.15s linear;
+}
+
+.comimi-arrow-prev[data-disabled="true"] .comimi-arrow-inner {
+  transform: translateX(-35px);
+  opacity: 0;
+  transition:
+    transform 0.3s var(--comimi-spring),
+    opacity 0.15s linear;
+}
+
 .comimi-arrow-bg {
   position: absolute;
   inset: 0;

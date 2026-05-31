@@ -521,7 +521,7 @@ export class MangaViewerCore implements MangaViewerInstance {
     const timer = window.setTimeout(() => {
       this.store.dispatch({ type: "removeNotification", id });
       this.notificationTimers.delete(id);
-    }, 3000);
+    }, 1500);
     this.notificationTimers.set(id, timer);
   }
 }

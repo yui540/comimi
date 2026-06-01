@@ -119,6 +119,16 @@ export interface MangaViewerOptions {
   lockLayoutMode?: boolean;
   mascot?: MascotOption;
   /**
+   * ここに挙げた設定キーは、IndexedDB に保存された値より
+   * 初期値（`settings` の値、無ければ `defaults`）を常に優先して適用する。
+   * 挙げなかったキーは従来どおりシードとして扱われ、保存値があればそちらが勝つ。
+   * `settings` はそのまま値の供給源として使い、`forceSettings` は優先度だけを
+   * 切り替えるため、「一部の設定だけ保存値より優先する」用途に使える。
+   * 例: `settings: { readingDirection: "ltr" }` + `forceSettings: ["readingDirection"]`
+   * で、保存済みの読み方向を無視して常に ltr で起動する。
+   */
+  forceSettings?: (keyof ViewerSettings)[];
+  /**
    * 非表示にする UI 項目のキー一覧。設定パネルの各行
    * （`locale` / `cover` / `direction` / `interval` / `backgroundColor`）と
    * ツールバーの操作（`pageMode` / `autoplay` / `viewMode`）を個別に隠せる。

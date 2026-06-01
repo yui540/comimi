@@ -100,7 +100,8 @@ interface MangaViewerOptions {
     | { src: string; alt?: string }
     | { render: () => HTMLElement }
     | false;
-  hiddenSettings?: HideableControl[];   // 非表示にする UI 項目
+  forceSettings?: (keyof ViewerSettings)[];   // 保存値より初期値を優先するキー
+  hiddenSettings?: HideableControl[];          // 非表示にする UI 項目
 }
 
 type HideableControl =
@@ -247,6 +248,29 @@ createMangaViewer(container, {
 - 漫画ごとの現在ページ（`manga.id` をキーに保存）
 
 データベース名は既定で `manga-viewer`。`storage.databaseName` で上書きできます。
+
+### 一部の設定だけ初期値を保存値より優先する
+
+通常 `settings` は「保存値がまだ無いときに使われる初期値（シード）」で、IndexedDB に保存済みの設定があればそちらが優先されます。`forceSettings` にキーを挙げると、**そのキーだけ**保存値を無視して常に初期値（`settings` の値、無ければ `defaults`）を適用します。挙げなかったキーは従来どおりシードのままです。
+
+```ts
+createMangaViewer(container, {
+  manga,
+  settings: {
+    readingDirection: "ltr", // 強制したい
+    backgroundColor: "black" // シード（保存値があればそちらが勝つ）
+  },
+  forceSettings: ["readingDirection"] // このキーだけ保存値より優先
+});
+```
+
+| キー | 挙動 |
+|---|---|
+| `forceSettings` に挙げたキー | `settings` の値が常に勝つ（保存値を無視） |
+| 挙げていないキー | シード（保存値があればそちらが勝つ） |
+
+- `settings` はそのまま値の供給源として使い、`forceSettings` は優先度だけを切り替えます。
+- `"layoutMode"` を挙げた場合、保存済みのレイアウトモードも無視されます（wide の高さは別途復元されます）。
 
 ## i18n
 

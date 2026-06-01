@@ -38,6 +38,8 @@ export class MangaViewerCore implements MangaViewerInstance {
   private destroyed = false;
   private mobileMediaQuery?: MediaQueryList;
   private lockLayoutMode = false;
+  // 保存値より初期値を優先する設定キー（forceSettings オプション由来）。
+  private forceSettings: ReadonlySet<keyof ViewerSettings> = new Set();
   // browserFullscreen 中に退避した body の overflow（未ロック時は null）。
   private bodyOverflowBackup: string | null = null;
 
@@ -51,6 +53,7 @@ export class MangaViewerCore implements MangaViewerInstance {
     });
 
     this.lockLayoutMode = options.lockLayoutMode ?? false;
+    this.forceSettings = new Set(options.forceSettings ?? []);
     this.storage = new IndexedDbStorage(options.storage);
     this.assetLoader = new AssetLoader();
     this.i18n = new I18n(settings.locale, options.translations);
@@ -275,9 +278,17 @@ export class MangaViewerCore implements MangaViewerInstance {
       if (this.lockLayoutMode) {
         delete settingsToApply.layoutMode;
       }
+      // forceSettings に挙げたキーは初期値を優先するため保存値を捨てる。
+      for (const key of this.forceSettings) {
+        delete settingsToApply[key];
+      }
       this.store.dispatch({ type: "updateSettings", settings: settingsToApply });
     }
-    if (!this.lockLayoutMode && savedLayout?.mode) {
+    if (
+      !this.lockLayoutMode &&
+      !this.forceSettings.has("layoutMode") &&
+      savedLayout?.mode
+    ) {
       const layoutMode: LayoutMode =
         savedLayout.mode === "theater" ? "wide" : savedLayout.mode;
       this.store.dispatch({ type: "setLayoutMode", layoutMode });

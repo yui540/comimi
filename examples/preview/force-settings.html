@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Manga Viewer Preview — Force settings</title>
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: #eee;
+        color: #333;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+      }
+
+      main {
+        width: 100%;
+        margin: 0 auto;
+        padding: 60px 0;
+      }
+
+      .note {
+        max-width: 900px;
+        margin: 0 auto 24px;
+        padding: 0 16px;
+        font-size: 14px;
+        line-height: 1.7;
+      }
+
+      .note code {
+        background: #ddd;
+        border-radius: 4px;
+        padding: 2px 6px;
+      }
+
+      .note ol {
+        margin: 8px 0 0;
+        padding-left: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="note">
+        <p>
+          <code>forceSettings: ["readingDirection"]</code> の例です。
+          読み方向は保存値を無視して<strong>常に ltr（左→右）</strong>で起動します。
+          背景色は <code>forceSettings</code> に含めていないため通常どおり保存値が優先されます。
+        </p>
+        <p>確認手順：</p>
+        <ol>
+          <li>設定パネルを開き、読み方向を rtl に、背景色を黒に変える</li>
+          <li>ページをリロードする</li>
+          <li>
+            読み方向は <strong>ltr に戻る</strong>（強制）／ 背景色は
+            <strong>黒のまま</strong>（保存値が維持）
+          </li>
+        </ol>
+      </div>
+      <div id="viewer"></div>
+    </main>
+    <script type="module" src="/src/force-settings.ts"></script>
+  </body>
+</html>

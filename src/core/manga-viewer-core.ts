@@ -34,6 +34,8 @@ export class MangaViewerCore implements MangaViewerInstance {
   private unsubscribers: Array<() => void> = [];
   private notificationTimers = new Map<string, number>();
   private autoTimer?: number;
+  private bootstrapOverlayTimer?: number;
+  private destroyed = false;
   private mobileMediaQuery?: MediaQueryList;
   private lockLayoutMode = false;
   // browserFullscreen 中に退避した body の overflow（未ロック時は null）。
@@ -120,7 +122,9 @@ export class MangaViewerCore implements MangaViewerInstance {
   }
 
   destroy(): void {
+    this.destroyed = true;
     window.clearInterval(this.autoTimer);
+    window.clearTimeout(this.bootstrapOverlayTimer);
     for (const timer of this.notificationTimers.values()) {
       window.clearTimeout(timer);
     }
@@ -259,6 +263,12 @@ export class MangaViewerCore implements MangaViewerInstance {
     const mangaId = this.store.getState().manga.id;
     const progress = await this.storage.getProgress(mangaId);
 
+    // await 中に destroy された場合は何もしない（StrictMode の
+    // mount→unmount→mount で破棄済みインスタンスが DOM を触るのを防ぐ）。
+    if (this.destroyed) {
+      return;
+    }
+
     if (savedSettings) {
       const settingsToApply: Partial<ViewerSettings> = { ...savedSettings };
       if (this.lockLayoutMode) {
@@ -285,7 +295,10 @@ export class MangaViewerCore implements MangaViewerInstance {
 
     this.renderer.update(this.store.getState());
     this.renderer.showSplash();
-    window.setTimeout(() => {
+    this.bootstrapOverlayTimer = window.setTimeout(() => {
+      if (this.destroyed) {
+        return;
+      }
       this.toggleOverlay(true);
     }, 1550);
     this.events.emit("ready", { manga: this.store.getState().manga });

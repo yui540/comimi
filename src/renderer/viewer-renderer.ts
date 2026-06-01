@@ -51,6 +51,7 @@ export class ViewerRenderer {
   private autoplayOverlayProgress?: HTMLDivElement;
   private autoplayOverlayProgressBar?: HTMLSpanElement;
   private notifications?: Notifications;
+  private destroyed = false;
 
   constructor(
     private container: HTMLElement,
@@ -96,6 +97,12 @@ export class ViewerRenderer {
   }
 
   update(state: ViewerState): void {
+    // destroy 後に async 処理（bootstrap の await 後など）から呼ばれても
+    // DOM を触らない。これがないと StrictMode の二重マウントで
+    // resize handle などが共有 container に二重追加される。
+    if (this.destroyed) {
+      return;
+    }
     if (this.isPageTurnAnimating) {
       return;
     }
@@ -227,7 +234,7 @@ export class ViewerRenderer {
   }
 
   showSplash(): void {
-    if (this.splash) {
+    if (this.destroyed || this.splash) {
       return;
     }
 
@@ -240,6 +247,7 @@ export class ViewerRenderer {
   }
 
   destroy(): void {
+    this.destroyed = true;
     window.clearTimeout(this.pageTurnTimer);
     window.clearTimeout(this.splashRemoveTimer);
     if (this.overlayApplyRaf !== undefined) {

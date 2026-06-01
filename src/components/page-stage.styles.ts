@@ -98,4 +98,9 @@ export const pageStageStyles = `
   overflow: auto;
 }
 
+/* オーバーレイ表示中は漫画ページ（リンク等）を操作不可にする */
+.comimi-stage[data-overlay="true"] .comimi-html-page {
+  pointer-events: none;
+}
+
 `;

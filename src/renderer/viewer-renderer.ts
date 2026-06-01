@@ -219,7 +219,7 @@ export class ViewerRenderer {
     const flag = String(visible);
     this.root
       .querySelectorAll<HTMLElement>(
-        ".comimi-arrows, .comimi-center-message, .comimi-menu-panel, .comimi-view-switcher, .comimi-controls-dock"
+        ".comimi-arrows, .comimi-center-message, .comimi-menu-panel, .comimi-view-switcher, .comimi-controls-dock, .comimi-stage"
       )
       .forEach((element) => {
         element.dataset.overlay = flag;

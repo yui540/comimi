@@ -5,6 +5,7 @@
   "overlay.menu": "Menu",
   "overlay.centerHint.desktop": "Klik bagian tengah untuk menutup",
   "overlay.centerHint.mobile": "Ketuk bagian tengah untuk menutup",
+  "overlay.moveDirection": "Arah baca",
   "splash.loading": "Memulai viewer",
   "autoplay.start": "Putar otomatis dimulai",
   "autoplay.stop": "Putar otomatis dihentikan",

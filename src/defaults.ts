@@ -33,6 +33,7 @@ export function createInitialState(
       settings
     ),
     overlayVisible: false,
+    moveGuideVisible: false,
     autoPageTurnEnabled: false,
     zoomScale: 1,
     panX: 0,

@@ -34,7 +34,7 @@ export class MangaViewerCore implements MangaViewerInstance {
   private unsubscribers: Array<() => void> = [];
   private notificationTimers = new Map<string, number>();
   private autoTimer?: number;
-  private bootstrapOverlayTimer?: number;
+  private bootstrapTimers: number[] = [];
   private destroyed = false;
   private mobileMediaQuery?: MediaQueryList;
   private lockLayoutMode = false;
@@ -128,7 +128,10 @@ export class MangaViewerCore implements MangaViewerInstance {
   destroy(): void {
     this.destroyed = true;
     window.clearInterval(this.autoTimer);
-    window.clearTimeout(this.bootstrapOverlayTimer);
+    for (const timer of this.bootstrapTimers) {
+      window.clearTimeout(timer);
+    }
+    this.bootstrapTimers = [];
     for (const timer of this.notificationTimers.values()) {
       window.clearTimeout(timer);
     }
@@ -307,13 +310,38 @@ export class MangaViewerCore implements MangaViewerInstance {
 
     this.renderer.update(this.store.getState());
     this.renderer.showSplash();
-    this.bootstrapOverlayTimer = window.setTimeout(() => {
-      if (this.destroyed) {
-        return;
-      }
-      this.toggleOverlay(true);
-    }, 1550);
+    this.startBootstrapGuide();
     this.events.emit("ready", { manga: this.store.getState().manga });
+  }
+
+  // スプラッシュ後の演出:
+  // スプラッシュ後は今まで通りオーバーレイ（メニュー等）を表示する。
+  // 中央だけは最初に進行方向ガイドを出し、約2秒後に「中央をクリック」
+  // メッセージと入れ替える（クロスフェード）。
+  private startBootstrapGuide(): void {
+    const OVERLAY_REVEAL_MS = 1550;
+    const GUIDE_DURATION_MS = 2000;
+
+    // オーバーレイ表示時に中央でまずガイドを見せるための表示要求。
+    this.store.dispatch({ type: "setMoveGuideVisible", visible: true });
+
+    const schedule = (delay: number, run: () => void) => {
+      const timer = window.setTimeout(() => {
+        if (this.destroyed) {
+          return;
+        }
+        run();
+      }, delay);
+      this.bootstrapTimers.push(timer);
+    };
+
+    schedule(OVERLAY_REVEAL_MS, () => {
+      this.toggleOverlay(true);
+    });
+    schedule(OVERLAY_REVEAL_MS + GUIDE_DURATION_MS, () => {
+      // ガイドを下ろすと、中央メッセージと入れ替わってフェードする。
+      this.store.dispatch({ type: "setMoveGuideVisible", visible: false });
+    });
   }
 
   private bindKeyboard(): void {

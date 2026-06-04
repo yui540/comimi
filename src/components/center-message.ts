@@ -1,13 +1,12 @@
 import { I18n } from "../i18n/i18n";
-import type { ViewerState } from "../types";
 
 export function renderCenterMessage(
-  state: ViewerState,
+  visible: boolean,
   i18n: I18n
 ): HTMLElement {
   const wrap = document.createElement("div");
   wrap.className = "comimi-center-message";
-  wrap.dataset.overlay = String(state.overlayVisible);
+  wrap.dataset.overlay = String(visible);
 
   const desktop = document.createElement("div");
   desktop.className = "comimi-center-message-text comimi-center-message-desktop";

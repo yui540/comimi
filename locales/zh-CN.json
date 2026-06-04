@@ -5,6 +5,7 @@
   "overlay.menu": "菜单",
   "overlay.centerHint.desktop": "点击中央以关闭",
   "overlay.centerHint.mobile": "点按中央以关闭",
+  "overlay.moveDirection": "翻页方向",
   "splash.loading": "正在启动阅读器",
   "autoplay.start": "已开始自动播放",
   "autoplay.stop": "已停止自动播放",

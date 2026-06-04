@@ -5,6 +5,7 @@
   "overlay.menu": "메뉴",
   "overlay.centerHint.desktop": "화면 중앙을 클릭하여 닫기",
   "overlay.centerHint.mobile": "화면 중앙을 탭하여 닫기",
+  "overlay.moveDirection": "이동 방향",
   "splash.loading": "뷰어를 시작 중",
   "autoplay.start": "자동 재생 시작",
   "autoplay.stop": "자동 재생 정지",

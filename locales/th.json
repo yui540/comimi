@@ -5,6 +5,7 @@
   "overlay.menu": "เมนู",
   "overlay.centerHint.desktop": "คลิกตรงกลางเพื่อปิด",
   "overlay.centerHint.mobile": "แตะตรงกลางเพื่อปิด",
+  "overlay.moveDirection": "ทิศทางการอ่าน",
   "splash.loading": "กำลังเปิดโปรแกรมอ่าน",
   "autoplay.start": "เริ่มเล่นอัตโนมัติแล้ว",
   "autoplay.stop": "หยุดเล่นอัตโนมัติแล้ว",

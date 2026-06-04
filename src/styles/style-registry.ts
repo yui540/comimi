@@ -6,6 +6,7 @@ import { iconStyles } from "../components/icons.styles";
 import { inputsStyles } from "../components/inputs.styles";
 import { loadingIconStyles } from "../components/loading-icon.styles";
 import { menuPanelStyles } from "../components/menu-panel.styles";
+import { moveDirectionGuideStyles } from "../components/move-direction-guide.styles";
 import { notificationsStyles } from "../components/notifications.styles";
 import { pageStageStyles } from "../components/page-stage.styles";
 import { rabbitMascotStyles } from "../components/rabbit-mascot.styles";
@@ -27,6 +28,7 @@ const viewerStyles = [
   errorIconStyles,
   arrowButtonsStyles,
   centerMessageStyles,
+  moveDirectionGuideStyles,
   viewModeSwitcherStyles,
   controlsDockStyles,
   inputsStyles,

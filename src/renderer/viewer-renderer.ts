@@ -3,6 +3,7 @@ import { renderArrowButtons } from "../components/arrow-buttons";
 import { renderCenterMessage } from "../components/center-message";
 import { ControlsDock } from "../components/controls-dock";
 import { MenuPanel } from "../components/menu-panel";
+import { renderMoveDirectionGuide } from "../components/move-direction-guide";
 import { ViewModeSwitcher } from "../components/view-mode-switcher";
 import {
   getAdjacentPageIndexes,
@@ -47,6 +48,10 @@ export class ViewerRenderer {
   private isPageTurnAnimating = false;
   private suppressNextClick = false;
   private prevOverlayVisible = false;
+  // 中央エリアはオーバーレイ表示中にガイドとメッセージが入れ替わる。
+  // それぞれの「実効表示」の前回値を持ち、個別にフェードさせる。
+  private prevCenterMessageVisible = false;
+  private prevMoveGuideVisible = false;
   private overlayApplyRaf?: number;
   private menuPanel?: MenuPanel;
   private viewModeSwitcher?: ViewModeSwitcher;
@@ -126,9 +131,24 @@ export class ViewerRenderer {
     }
 
     const overlayChanged = this.prevOverlayVisible !== state.overlayVisible;
+    // オーバーレイ表示中、中央はまずガイドを出し、約2秒後にメッセージへ入れ替える。
+    // ガイドとメッセージは排他で、どちらもオーバーレイ非表示時は出さない。
+    const moveGuideVisible = state.overlayVisible && state.moveGuideVisible;
+    const centerMessageVisible = state.overlayVisible && !state.moveGuideVisible;
+    const moveGuideChanged = this.prevMoveGuideVisible !== moveGuideVisible;
+    const centerMessageChanged =
+      this.prevCenterMessageVisible !== centerMessageVisible;
     const renderState: ViewerState = overlayChanged
       ? { ...state, overlayVisible: this.prevOverlayVisible }
       : state;
+    // 「前回値で描画してから rAF で反転」方式でフェードさせる。
+    // 描画用の値は変化時のみ前回値を使う。
+    const moveGuideRenderVisible = moveGuideChanged
+      ? this.prevMoveGuideVisible
+      : moveGuideVisible;
+    const centerMessageRenderVisible = centerMessageChanged
+      ? this.prevCenterMessageVisible
+      : centerMessageVisible;
 
     if (!this.menuPanel) {
       this.menuPanel = new MenuPanel(this.callbacks, this.i18n, {
@@ -182,7 +202,12 @@ export class ViewerRenderer {
     this.pageStage.snapTransform();
 
     const newChildren: Node[] = [
-      renderCenterMessage(renderState, this.i18n),
+      renderCenterMessage(centerMessageRenderVisible, this.i18n),
+      renderMoveDirectionGuide(
+        state.settings.readingDirection,
+        moveGuideRenderVisible,
+        this.i18n
+      ),
       renderArrowButtons({ state: renderState, callbacks: this.callbacks })
     ];
 
@@ -224,24 +249,54 @@ export class ViewerRenderer {
       this.overlayApplyRaf = undefined;
     }
 
-    if (overlayChanged) {
-      const targetVisible = state.overlayVisible;
+    if (overlayChanged || centerMessageChanged || moveGuideChanged) {
+      const overlayTarget = state.overlayVisible;
+      const centerTarget = centerMessageVisible;
+      const guideTarget = moveGuideVisible;
       // Force sync layout so the browser commits the "from" state before flip.
       void this.root.offsetWidth;
       this.overlayApplyRaf = requestAnimationFrame(() => {
         this.overlayApplyRaf = undefined;
-        this.applyOverlayVisibility(targetVisible);
+        if (overlayChanged) {
+          this.applyOverlayVisibility(overlayTarget);
+        }
+        if (centerMessageChanged) {
+          this.applyCenterMessageVisibility(centerTarget);
+        }
+        if (moveGuideChanged) {
+          this.applyMoveGuideVisibility(guideTarget);
+        }
       });
     }
 
     this.prevOverlayVisible = state.overlayVisible;
+    this.prevCenterMessageVisible = centerMessageVisible;
+    this.prevMoveGuideVisible = moveGuideVisible;
+  }
+
+  private applyCenterMessageVisibility(visible: boolean): void {
+    const flag = String(visible);
+    this.root
+      .querySelectorAll<HTMLElement>(".comimi-center-message")
+      .forEach((element) => {
+        element.dataset.overlay = flag;
+      });
+  }
+
+  private applyMoveGuideVisibility(visible: boolean): void {
+    const flag = String(visible);
+    this.root
+      .querySelectorAll<HTMLElement>(".comimi-move-guide")
+      .forEach((element) => {
+        element.dataset.visible = flag;
+      });
   }
 
   private applyOverlayVisibility(visible: boolean): void {
     const flag = String(visible);
     this.root
       .querySelectorAll<HTMLElement>(
-        ".comimi-arrows, .comimi-center-message, .comimi-menu-panel, .comimi-view-switcher, .comimi-controls-dock, .comimi-stage"
+        ".comimi-arrows, .comimi-menu-panel, .comimi-view-switcher, .comimi-controls-dock, .comimi-stage"
       )
       .forEach((element) => {
         element.dataset.overlay = flag;

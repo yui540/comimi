@@ -88,6 +88,8 @@ export interface ViewerState {
   currentPageIndex: number;
   visiblePageIndexes: number[];
   overlayVisible: boolean;
+  /** スプラッシュ直後に表示する進行方向ガイドの表示要求フラグ。 */
+  moveGuideVisible: boolean;
   autoPageTurnEnabled: boolean;
   zoomScale: number;
   panX: number;
@@ -192,6 +194,7 @@ export type ViewerAction =
   | { type: "nextPage" }
   | { type: "previousPage" }
   | { type: "setOverlayVisible"; visible: boolean }
+  | { type: "setMoveGuideVisible"; visible: boolean }
   | { type: "toggleAutoPageTurn" }
   | { type: "updateSettings"; settings: Partial<ViewerSettings> }
   | { type: "setLayoutMode"; layoutMode: LayoutMode }

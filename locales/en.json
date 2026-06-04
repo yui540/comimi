@@ -5,6 +5,7 @@
   "overlay.menu": "Menu",
   "overlay.centerHint.desktop": "Click the center to close",
   "overlay.centerHint.mobile": "Tap the center to close",
+  "overlay.moveDirection": "Reading direction",
   "splash.loading": "Starting viewer",
   "autoplay.start": "Auto play started",
   "autoplay.stop": "Auto play stopped",

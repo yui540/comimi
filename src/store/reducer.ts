@@ -66,6 +66,15 @@ export function reducer(state: ViewerState, action: ViewerAction): ViewerState {
         panel: action.visible ? state.panel : "none"
       };
 
+    case "setMoveGuideVisible":
+      if (state.moveGuideVisible === action.visible) {
+        return state;
+      }
+      return {
+        ...state,
+        moveGuideVisible: action.visible
+      };
+
     case "toggleAutoPageTurn":
       return {
         ...state,

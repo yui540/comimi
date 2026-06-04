@@ -5,6 +5,7 @@
   "overlay.menu": "メニュー",
   "overlay.centerHint.desktop": "閉じるには画面中央をクリック",
   "overlay.centerHint.mobile": "閉じるには画面中央をタップ",
+  "overlay.moveDirection": "移動方向",
   "splash.loading": "ビューワーを起動中",
   "autoplay.start": "自動再生を開始",
   "autoplay.stop": "自動再生を停止",

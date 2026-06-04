@@ -477,6 +477,9 @@ export class ViewerRenderer {
       this.callbacks.setZoom(nextScale, clampedPan.x, clampedPan.y);
     };
     const onMouseDown = (event: MouseEvent) => {
+      // 新しいジェスチャの開始時に、前回の操作で立った抑止フラグを必ず解放する。
+      // スワイプ（touch）は合成clickを発火しないためフラグが残り、次のタップを1回食う。
+      this.suppressNextClick = false;
       if (this.isPageTurnAnimating || this.isSwipeBlockingTarget(event.target)) {
         return;
       }
@@ -527,6 +530,9 @@ export class ViewerRenderer {
       this.mouseStart = undefined;
     };
     const onTouchStart = (event: TouchEvent) => {
+      // 新しいジェスチャの開始時に、前回の操作で立った抑止フラグを必ず解放する。
+      // スワイプは合成clickを発火しないためフラグが残り、次のタップを1回食う。
+      this.suppressNextClick = false;
       if (this.isPageTurnAnimating) {
         return;
       }

@@ -1,4 +1,6 @@
 import { I18n } from "../i18n/i18n";
+import type { MascotOption } from "../types";
+import { buildMascotNode } from "./mascot";
 
 const ERROR_SVG = `
 <svg viewBox="0 0 112.19 99.01" class="comimi-error-svg" xmlns="http://www.w3.org/2000/svg">
@@ -16,13 +18,24 @@ const ERROR_SVG = `
 </svg>
 `;
 
-export function renderErrorIcon(i18n: I18n, pageNumber: number): HTMLElement {
+export function renderErrorIcon(
+  i18n: I18n,
+  pageNumber: number,
+  mascot?: MascotOption
+): HTMLElement {
   const wrap = document.createElement("div");
   wrap.className = "comimi-error-icon";
 
   const svgWrap = document.createElement("div");
   svgWrap.className = "comimi-error-icon-svg";
-  svgWrap.innerHTML = ERROR_SVG;
+
+  // カスタム指定があればアイコンだけ差し替える（下のテキストはそのまま残す）。
+  const customNode = mascot ? buildMascotNode(mascot) : null;
+  if (customNode) {
+    svgWrap.append(customNode);
+  } else {
+    svgWrap.innerHTML = ERROR_SVG;
+  }
 
   const text = document.createElement("div");
   text.className = "comimi-error-icon-text";

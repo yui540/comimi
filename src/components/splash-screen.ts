@@ -1,5 +1,6 @@
 import { I18n } from "../i18n/i18n";
 import type { MascotOption } from "../types";
+import { buildMascotNode } from "./mascot";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 
@@ -38,19 +39,11 @@ function buildSplashLogo(option?: MascotOption): HTMLElement | null {
     return null;
   }
 
-  if (option) {
+  const node = buildMascotNode(option);
+  if (node) {
     const customLogo = document.createElement("div");
     customLogo.className = "comimi-splash-custom-logo";
-
-    if ("render" in option) {
-      customLogo.append(option.render());
-    } else {
-      const img = document.createElement("img");
-      img.src = option.src;
-      img.alt = option.alt ?? "";
-      img.draggable = false;
-      customLogo.append(img);
-    }
+    customLogo.append(node);
     return customLogo;
   }
 

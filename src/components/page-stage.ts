@@ -3,6 +3,7 @@ import { I18n } from "../i18n/i18n";
 import type {
   ImagePage,
   MangaPage,
+  MascotOption,
   PageSrcResolver,
   ViewerState
 } from "../types";
@@ -19,6 +20,10 @@ export interface PageStageOptions {
   i18n: I18n;
   isMobileViewport: () => boolean;
   resolvePageSrc?: PageSrcResolver;
+  /** 読み込み中アイコンのカスタム（解決済み） */
+  loadingMascot?: MascotOption;
+  /** 読み込み失敗アイコンのカスタム（解決済み） */
+  errorMascot?: MascotOption;
 }
 
 interface CachedSlot {
@@ -152,7 +157,13 @@ export class PageStage {
     img.draggable = false;
     img.style.transform = pageTransform(state);
     img.addEventListener("error", () => {
-      slot.replaceChildren(renderErrorIcon(this.options.i18n, pageIndex + 1));
+      slot.replaceChildren(
+        renderErrorIcon(
+          this.options.i18n,
+          pageIndex + 1,
+          this.options.errorMascot
+        )
+      );
     });
     img.addEventListener("contextmenu", (event) => event.preventDefault());
     slot.append(img);
@@ -164,7 +175,10 @@ export class PageStage {
       return { slot, img };
     }
 
-    const loading = renderLoadingIcon(this.options.i18n);
+    const loading = renderLoadingIcon(
+      this.options.i18n,
+      this.options.loadingMascot
+    );
     slot.append(loading);
     img.style.visibility = "hidden";
 
@@ -200,7 +214,13 @@ export class PageStage {
       })
       .catch(() => {
         loading.remove();
-        slot.replaceChildren(renderErrorIcon(this.options.i18n, pageIndex + 1));
+        slot.replaceChildren(
+          renderErrorIcon(
+            this.options.i18n,
+            pageIndex + 1,
+            this.options.errorMascot
+          )
+        );
       });
 
     return { slot, img };

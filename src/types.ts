@@ -124,7 +124,7 @@ export interface MangaViewerOptions {
   events?: Partial<ViewerEventHandlersMap>;
   resolvePageSrc?: PageSrcResolver;
   lockLayoutMode?: boolean;
-  mascot?: MascotOption;
+  mascot?: MascotOption | MascotAreaOptions;
   /**
    * ここに挙げた設定キーは、IndexedDB に保存された値より
    * 初期値（`settings` の値、無ければ `defaults`）を常に優先して適用する。
@@ -147,7 +147,26 @@ export interface MangaViewerOptions {
 export type MascotOption =
   | { src: string; alt?: string }
   | { render: () => HTMLElement }
+  | { html: string }
   | false;
+
+/**
+ * マスコット（キャラクター表示）をエリアごとに個別指定する形式。
+ * 単一の `MascotOption` を渡した場合は従来どおりスプラッシュ／メニュー／ドックに適用される。
+ * 各エリアの指定が無い場合は `default` → 組み込みのデフォルトの順でフォールバックする。
+ */
+export interface MascotAreaOptions {
+  /** 個別指定が無いエリア共通のフォールバック */
+  default?: MascotOption;
+  /** スプラッシュ画面 */
+  splash?: MascotOption;
+  /** メニューパネル・コントロールドック */
+  menu?: MascotOption;
+  /** ページ読み込み中アイコン */
+  loading?: MascotOption;
+  /** ページ読み込み失敗アイコン */
+  error?: MascotOption;
+}
 
 export interface PageSrcContext {
   page: ImagePage;

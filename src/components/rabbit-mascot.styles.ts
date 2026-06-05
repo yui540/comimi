@@ -39,4 +39,13 @@ export const rabbitMascotStyles = `
     display: none;
   }
 }
+
+/* { html } 指定で差し込まれたカスタムHTMLのラッパ。各エリアの枠いっぱいに収める。 */
+.comimi-mascot-html {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
 `;

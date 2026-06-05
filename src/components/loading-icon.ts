@@ -1,4 +1,6 @@
 import { I18n } from "../i18n/i18n";
+import type { MascotOption } from "../types";
+import { buildMascotNode } from "./mascot";
 
 const LOADING_SVG = `
 <svg viewBox="0 0 112.19 99.01" class="comimi-loading-svg" xmlns="http://www.w3.org/2000/svg">
@@ -18,13 +20,23 @@ const LOADING_SVG = `
 
 const LOOP_INTERVAL_MS = 3000;
 
-export function renderLoadingIcon(i18n: I18n): HTMLElement {
+export function renderLoadingIcon(
+  i18n: I18n,
+  mascot?: MascotOption
+): HTMLElement {
   const wrap = document.createElement("div");
   wrap.className = "comimi-loading-icon";
 
   const svgWrap = document.createElement("div");
   svgWrap.className = "comimi-loading-icon-svg";
-  svgWrap.innerHTML = LOADING_SVG;
+
+  // カスタム指定があればアイコンだけ差し替える（下のテキストはそのまま残す）。
+  const customNode = mascot ? buildMascotNode(mascot) : null;
+  if (customNode) {
+    svgWrap.append(customNode);
+  } else {
+    svgWrap.innerHTML = LOADING_SVG;
+  }
 
   const text = document.createElement("div");
   text.className = "comimi-loading-icon-text";
@@ -37,14 +49,16 @@ export function renderLoadingIcon(i18n: I18n): HTMLElement {
 
   wrap.append(svgWrap, text);
 
-  // Replay all animations every loop interval by re-rendering the SVG.
-  const timer = window.setInterval(() => {
-    if (!wrap.isConnected) {
-      window.clearInterval(timer);
-      return;
-    }
-    svgWrap.innerHTML = LOADING_SVG;
-  }, LOOP_INTERVAL_MS);
+  // デフォルトSVGのときだけ、ループ間隔ごとに再描画してアニメーションを再生する。
+  if (!customNode) {
+    const timer = window.setInterval(() => {
+      if (!wrap.isConnected) {
+        window.clearInterval(timer);
+        return;
+      }
+      svgWrap.innerHTML = LOADING_SVG;
+    }, LOOP_INTERVAL_MS);
+  }
 
   return wrap;
 }

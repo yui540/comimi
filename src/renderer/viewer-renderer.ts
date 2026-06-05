@@ -14,11 +14,13 @@ import {
 import { PageStage } from "../components/page-stage";
 import { Notifications } from "../components/notifications";
 import { renderSplashScreen } from "../components/splash-screen";
+import { resolveMascot } from "../components/mascot";
 import { createViewerRoot } from "../components/viewer-root";
 import { I18n } from "../i18n/i18n";
 import { ensureViewerStyles } from "../styles/style-registry";
 import type {
   HideableControl,
+  MascotAreaOptions,
   MascotOption,
   PageSrcResolver,
   ViewerState
@@ -71,7 +73,7 @@ export class ViewerRenderer {
     className?: string,
     resolvePageSrc?: PageSrcResolver,
     private lockLayoutMode = false,
-    private mascot?: MascotOption,
+    private mascot?: MascotOption | MascotAreaOptions,
     private hidden: ReadonlySet<HideableControl> = new Set()
   ) {
     ensureViewerStyles();
@@ -79,7 +81,9 @@ export class ViewerRenderer {
       assetLoader: this.assetLoader,
       i18n: this.i18n,
       isMobileViewport: () => this.isMobileViewport(),
-      resolvePageSrc
+      resolvePageSrc,
+      loadingMascot: resolveMascot(this.mascot, "loading"),
+      errorMascot: resolveMascot(this.mascot, "error")
     });
     this.root = createViewerRoot({ className });
     this.container.replaceChildren(this.root);
@@ -153,7 +157,7 @@ export class ViewerRenderer {
     if (!this.menuPanel) {
       this.menuPanel = new MenuPanel(this.callbacks, this.i18n, {
         lockLayoutMode: this.lockLayoutMode,
-        mascot: this.mascot
+        mascot: resolveMascot(this.mascot, "menu")
       });
     }
     if (
@@ -167,7 +171,7 @@ export class ViewerRenderer {
       this.controlsDock = new ControlsDock(
         this.callbacks,
         this.i18n,
-        this.mascot,
+        resolveMascot(this.mascot, "menu"),
         this.hidden
       );
     }
@@ -308,7 +312,10 @@ export class ViewerRenderer {
       return;
     }
 
-    this.splash = renderSplashScreen(this.i18n, this.mascot);
+    this.splash = renderSplashScreen(
+      this.i18n,
+      resolveMascot(this.mascot, "splash")
+    );
     this.root.append(this.splash);
     this.splashRemoveTimer = window.setTimeout(() => {
       this.splash?.remove();

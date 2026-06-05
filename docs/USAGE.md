@@ -96,10 +96,7 @@ interface MangaViewerOptions {
     isSpread: boolean;
   }) => string | Promise<string>;
   lockLayoutMode?: boolean;
-  mascot?:
-    | { src: string; alt?: string }
-    | { render: () => HTMLElement }
-    | false;
+  mascot?: MascotOption | MascotAreaOptions;   // 単一指定 or エリア別指定
   forceSettings?: (keyof ViewerSettings)[];   // 保存値より初期値を優先するキー
   hiddenSettings?: HideableControl[];          // 非表示にする UI 項目
 }
@@ -366,23 +363,36 @@ createMangaViewer(container, {
 
 ## マスコット画像の差し替え
 
-`mascot` オプションで、コントロールドック・メニュー・スプラッシュ画面のうさぎイラストを任意の画像に置き換えられます。
+`mascot` オプションで、各所のうさぎイラスト／アイコンを任意の画像・HTML に置き換えられます。
 
 ```ts
 type MascotOption =
   | { src: string; alt?: string }      // 画像 URL で差し替え
-  | { render: () => HTMLElement }       // 完全カスタム
+  | { render: () => HTMLElement }       // HTMLElement を返す
+  | { html: string }                    // HTML 文字列を差し込む
   | false;                              // 非表示
+
+// エリアごとに個別指定する形式
+interface MascotAreaOptions {
+  default?: MascotOption;  // 個別指定が無いエリア共通のフォールバック
+  splash?: MascotOption;   // スプラッシュ画面
+  menu?: MascotOption;     // メニューパネル・コントロールドック
+  loading?: MascotOption;  // ページ読み込み中アイコン
+  error?: MascotOption;    // ページ読み込み失敗アイコン
+}
 ```
 
-- 未指定 → デフォルトのうさぎ SVG
+各 `MascotOption` の値:
+
+- 未指定 → デフォルトの SVG
 - `{ src }` → `<img>` に変換して表示
-- `{ render }` → 関数が返す `HTMLElement` を表示（毎回呼ばれるので、コントロールドック / メニュー / スプラッシュで別インスタンス）
-- `false` → マスコットおよびスプラッシュのロゴ部分を非表示
+- `{ render }` → 関数が返す `HTMLElement` を表示（毎回呼ばれるので各所で別インスタンス）
+- `{ html }` → HTML 文字列をそのまま差し込む
+- `false` → 非表示（スプラッシュ／メニューのみ。読み込み中／失敗ではデフォルト表示）
 
-スプラッシュ画面では、`mascot` が指定されているとデフォルトの「うさぎロゴ + comimi タイポ」が消え、120×120 のカスタムアイコンのみが表示されます。
+### 単一指定（従来どおり）
 
-### 例: 画像 URL で差し替え
+`mascot` に `MascotOption` を直接渡すと、**スプラッシュ・メニュー・コントロールドック**に同じものが適用されます（読み込み中／失敗は対象外でデフォルトのまま）。
 
 ```ts
 createMangaViewer(container, {
@@ -391,20 +401,34 @@ createMangaViewer(container, {
 });
 ```
 
-### 例: SVG を直接埋め込み
+### エリア別指定
+
+`MascotAreaOptions` を渡すと、**スプラッシュ・メニュー/ドック・読み込み中・読み込み失敗**を個別にカスタムできます。指定の無いエリアは `default` →（無ければ）組み込みのデフォルトにフォールバックします。
+
+```ts
+createMangaViewer(container, {
+  manga,
+  mascot: {
+    splash: { src: "/assets/splash.png" },
+    menu: { render: () => buildMyMascot() },
+    loading: { html: `<div class="my-spinner"></div>` },
+    error: { src: "/assets/sad.png" }
+  }
+});
+```
+
+- 読み込み中／失敗では、カスタム指定は**アイコン部分だけを差し替え**、下のテキスト（「読み込み中…」「ページ N の読み込みに失敗しました」）はそのまま残ります。
+- スプラッシュ画面では、`splash`（または単一指定）があるとデフォルトの「うさぎロゴ + comimi タイポ」が消え、カスタムアイコンのみが表示されます。
+
+### 例: SVG / HTML を直接埋め込み
 
 ```ts
 const ICON_SVG = `<svg viewBox="0 0 50 50" ...>...</svg>`;
 
 createMangaViewer(container, {
   manga,
-  mascot: {
-    render: () => {
-      const wrap = document.createElement("div");
-      wrap.innerHTML = ICON_SVG;
-      return wrap.firstElementChild as HTMLElement;
-    }
-  }
+  // HTML 文字列をそのまま差し込む
+  mascot: { html: ICON_SVG }
 });
 ```
 

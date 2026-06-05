@@ -1,4 +1,5 @@
 import type { MascotOption } from "../types";
+import { buildMascotNode } from "./mascot";
 
 const DEFAULT_RABBIT_SVG = `
 <svg viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg" class="comimi-rabbit-svg">
@@ -22,18 +23,12 @@ export function renderRabbitMascot(option?: MascotOption): HTMLElement | null {
   const wrap = document.createElement("div");
   wrap.className = "comimi-rabbit";
 
-  if (option && "render" in option) {
-    wrap.append(option.render());
-    return wrap;
-  }
-
-  if (option && "src" in option) {
-    const img = document.createElement("img");
-    img.className = "comimi-rabbit-img";
-    img.src = option.src;
-    img.alt = option.alt ?? "";
-    img.draggable = false;
-    wrap.append(img);
+  const node = buildMascotNode(option);
+  if (node) {
+    if (node instanceof HTMLImageElement) {
+      node.classList.add("comimi-rabbit-img");
+    }
+    wrap.append(node);
     return wrap;
   }
 

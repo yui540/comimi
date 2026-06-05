@@ -17,6 +17,8 @@ export type {
   MangaPage,
   MangaViewerInstance,
   MangaViewerOptions,
+  MascotAreaOptions,
+  MascotOption,
   PageTurnMode,
   ReadingDirection,
   TranslationMap,

@@ -520,16 +520,49 @@ export class ViewerRenderer {
       }
 
       event.preventDefault();
+
+      // カーソルが乗っているページ（スロット）を特定する。
+      // 見開きでは左右どちらか一方だけがズーム対象になる。
+      const slot =
+        event.target instanceof Element
+          ? event.target.closest<HTMLElement>(".comimi-page")
+          : null;
+      if (!slot) {
+        return;
+      }
+      const pageIndex = Number(slot.dataset.pageIndex);
+      if (Number.isNaN(pageIndex)) {
+        return;
+      }
+
+      // 対象ページが変わったら、そのページは等倍から開始する
+      // （直前に別ページをズームしていてもその状態は引き継がない）。
+      const sameTarget = state.zoomPageIndex === pageIndex;
+      const baseScale = sameTarget ? state.zoomScale : 1;
+      const basePanX = sameTarget ? state.panX : 0;
+      const basePanY = sameTarget ? state.panY : 0;
+
       const delta =
         event.deltaY > 0 ? -state.settings.zoom.step : state.settings.zoom.step;
-      const nextScale = this.clampedZoom(state.zoomScale + delta, state);
-      const clampedPan = this.clampPan(
-        state.panX,
-        state.panY,
+      const nextScale = this.clampedZoom(baseScale + delta, state);
+
+      // カーソル直下の点を固定したままズームする（カーソル中心ズーム）。
+      // transform-origin はスロット中心なので、スロット中心からの相対座標で計算。
+      // pan' = pan * r + (cursor - center) * (1 - r)  （r = nextScale / baseScale）
+      const rect = slot.getBoundingClientRect();
+      const cursorX = event.clientX - (rect.left + rect.width / 2);
+      const cursorY = event.clientY - (rect.top + rect.height / 2);
+      const ratio = baseScale === 0 ? 1 : nextScale / baseScale;
+      const panX = basePanX * ratio + cursorX * (1 - ratio);
+      const panY = basePanY * ratio + cursorY * (1 - ratio);
+
+      const clampedPan = this.clampPan(panX, panY, nextScale, state);
+      this.callbacks.setZoom(
         nextScale,
-        state
+        clampedPan.x,
+        clampedPan.y,
+        pageIndex
       );
-      this.callbacks.setZoom(nextScale, clampedPan.x, clampedPan.y);
     };
     const onMouseDown = (event: MouseEvent) => {
       // 新しいジェスチャの開始時に、前回の操作で立った抑止フラグを必ず解放する。

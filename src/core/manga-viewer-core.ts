@@ -86,8 +86,8 @@ export class MangaViewerCore implements MangaViewerInstance {
       setPanel: (panel) => {
         this.store.dispatch({ type: "setPanel", panel });
       },
-      setZoom: (scale, panX, panY) =>
-        this.store.dispatch({ type: "setZoom", scale, panX, panY }),
+      setZoom: (scale, panX, panY, pageIndex) =>
+        this.store.dispatch({ type: "setZoom", scale, panX, panY, pageIndex }),
       setPan: (panX, panY) => this.store.dispatch({ type: "setPan", panX, panY }),
       resetZoom: () => this.store.dispatch({ type: "resetZoom" })
     };

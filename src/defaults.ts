@@ -38,6 +38,7 @@ export function createInitialState(
     zoomScale: 1,
     panX: 0,
     panY: 0,
+    zoomPageIndex: null,
     settings,
     layout: {
       mode: settings.layoutMode

@@ -20,7 +20,8 @@ export function reducer(state: ViewerState, action: ViewerAction): ViewerState {
         currentPageIndex,
         zoomScale: 1,
         panX: 0,
-        panY: 0
+        panY: 0,
+        zoomPageIndex: null
       });
     }
 
@@ -39,7 +40,8 @@ export function reducer(state: ViewerState, action: ViewerAction): ViewerState {
         currentPageIndex: nextPageIndex,
         zoomScale: 1,
         panX: 0,
-        panY: 0
+        panY: 0,
+        zoomPageIndex: null
       });
     }
 
@@ -108,13 +110,29 @@ export function reducer(state: ViewerState, action: ViewerAction): ViewerState {
         }
       };
 
-    case "setZoom":
+    case "setZoom": {
+      const zoomScale = clampZoom(action.scale, state);
+      // 等倍に戻ったらパンとズーム対象もクリアする。
+      if (zoomScale <= 1) {
+        return {
+          ...state,
+          zoomScale: 1,
+          panX: 0,
+          panY: 0,
+          zoomPageIndex: null
+        };
+      }
       return {
         ...state,
-        zoomScale: clampZoom(action.scale, state),
+        zoomScale,
         panX: action.panX ?? state.panX,
-        panY: action.panY ?? state.panY
+        panY: action.panY ?? state.panY,
+        zoomPageIndex:
+          action.pageIndex !== undefined
+            ? action.pageIndex
+            : state.zoomPageIndex
       };
+    }
 
     case "setPan":
       return {
@@ -128,7 +146,8 @@ export function reducer(state: ViewerState, action: ViewerAction): ViewerState {
         ...state,
         zoomScale: 1,
         panX: 0,
-        panY: 0
+        panY: 0,
+        zoomPageIndex: null
       };
 
     case "setPanel":

@@ -95,7 +95,11 @@ export class PageStage {
           : "single";
         cached.slot.dataset.pageIndex = String(pageIndex);
         if (cached.img) {
-          cached.img.style.transform = pageTransform(state);
+          // zoomPageIndex が null なら全ページに適用（ピンチ等の従来挙動）。
+          // 指定があれば、そのページ（カーソルが当たっているページ）だけズーム。
+          const applyZoom =
+            state.zoomPageIndex === null || state.zoomPageIndex === pageIndex;
+          cached.img.style.transform = applyZoom ? pageTransform(state) : "";
         }
         groupEl.append(cached.slot);
       }

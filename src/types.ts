@@ -15,10 +15,10 @@ export type LayoutMode =
 export type HideableControl =
   // 設定パネルの各項目
   | "locale"
+  | "theme"
   | "cover"
   | "direction"
   | "interval"
-  | "backgroundColor"
   // ツールバーの操作
   | "pageMode"
   | "autoplay"

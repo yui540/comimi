@@ -41,6 +41,5 @@ createMangaViewer(container, {
     hasCover: true,
     readingDirection: "rtl"
   },
-  // 自動再生ボタンと、設定パネルの言語・背景色を隠す。
-  hiddenSettings: ["autoplay", "locale", "backgroundColor"]
+  hiddenSettings: ["autoplay", "locale", "theme"]
 });

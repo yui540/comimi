@@ -84,7 +84,11 @@ export class SettingsPanel {
         this.localeLabel,
         this.localeSelect.getElement()
       ),
-      this.section(this.themeLabel, this.themeSelect.getElement()),
+      this.buildSection(
+        "theme",
+        this.themeLabel,
+        this.themeSelect.getElement()
+      ),
       this.buildSection(
         "cover",
         this.coverLabel,
@@ -151,6 +155,10 @@ export class SettingsPanel {
     this.setStaticValue(
       "locale",
       this.labelFor(localeOptions, state.settings.locale)
+    );
+    this.setStaticValue(
+      "theme",
+      this.labelFor(themeOptions, state.settings.theme)
     );
     this.setStaticValue("cover", state.settings.hasCover ? "ON" : "OFF");
     this.setStaticValue(

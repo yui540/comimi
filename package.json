@@ -1,6 +1,6 @@
 {
   "name": "@yui540/comimi",
-  "version": "0.10.1",
+  "version": "0.11.0",
   "description": "Open-source comic reader library for JS/TS",
   "keywords": [
     "manga",

@@ -2,6 +2,8 @@ import type { Manga, ViewerSettings, ViewerState } from "./types";
 
 export const PRELOAD_PAGE_COUNT = 1;
 
+export const PRELOAD_IMAGE_COUNT = 4;
+
 export const defaultSettings: ViewerSettings = {
   locale: "ja",
   hasCover: true,

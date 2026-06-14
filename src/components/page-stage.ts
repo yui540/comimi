@@ -1,4 +1,5 @@
 import { AssetLoader } from "../core/asset-loader";
+import { PRELOAD_IMAGE_COUNT } from "../defaults";
 import { I18n } from "../i18n/i18n";
 import type {
   ImagePage,
@@ -10,6 +11,7 @@ import type {
 import { renderErrorIcon } from "./error-icon";
 import { renderLoadingIcon } from "./loading-icon";
 import {
+  getDisplayedPageIndexes,
   getPageGroupSide,
   getPreloadedPageGroups,
   type PageGroupPlacement
@@ -36,6 +38,7 @@ export class PageStage {
   private imageSources = new Map<string, string>();
   private resolvePromises = new Map<string, Promise<string>>();
   private slots = new Map<string, CachedSlot>();
+  private preloadedKeys = new Set<string>();
 
   constructor(private options: PageStageOptions) {
     this.root = document.createElement("div");
@@ -113,6 +116,43 @@ export class PageStage {
     }
 
     this.root.replaceChildren(...newGroups);
+
+    this.preloadImages(state, isMobile);
+  }
+
+  private preloadImages(state: ViewerState, isMobile: boolean): void {
+    const displayed = getDisplayedPageIndexes(state, isMobile);
+    if (displayed.length === 0) {
+      return;
+    }
+    const first = Math.max(0, Math.min(...displayed) - PRELOAD_IMAGE_COUNT);
+    const last = Math.min(
+      state.manga.pages.length - 1,
+      Math.max(...displayed) + PRELOAD_IMAGE_COUNT
+    );
+
+    for (let index = first; index <= last; index += 1) {
+      const page = state.manga.pages[index];
+      if (!page || page.type !== "image") {
+        continue;
+      }
+      const key = `${state.manga.id}:${page.id}`;
+      if (this.preloadedKeys.has(key) || this.imageSources.has(key)) {
+        continue;
+      }
+      this.preloadedKeys.add(key);
+      this.resolveSource(state, page, index, false)
+        .then((src) => {
+          const image = new Image();
+          image.src = src;
+          if (typeof image.decode === "function") {
+            image.decode().catch(() => {});
+          }
+        })
+        .catch(() => {
+          this.preloadedKeys.delete(key);
+        });
+    }
   }
 
   private getOrBuildSlot(
@@ -182,25 +222,7 @@ export class PageStage {
     slot.append(loading);
     img.style.visibility = "hidden";
 
-    let promise = this.resolvePromises.get(imageKey);
-    if (!promise) {
-      const resolver = this.options.resolvePageSrc;
-      promise = resolver
-        ? Promise.resolve(
-            resolver({ page: page as ImagePage, pageIndex, isSpread })
-          )
-        : this.options.assetLoader.resolveImageSource(state.manga.id, page);
-      this.resolvePromises.set(imageKey, promise);
-      promise
-        .then((src) => {
-          this.imageSources.set(imageKey, src);
-        })
-        .finally(() => {
-          this.resolvePromises.delete(imageKey);
-        });
-    }
-
-    promise
+    this.resolveSource(state, page, pageIndex, isSpread)
       .then((src) => {
         img.addEventListener(
           "load",
@@ -224,6 +246,41 @@ export class PageStage {
       });
 
     return { slot, img };
+  }
+
+  private resolveSource(
+    state: ViewerState,
+    page: MangaPage,
+    pageIndex: number,
+    isSpread: boolean
+  ): Promise<string> {
+    const imageKey = `${state.manga.id}:${page.id}`;
+    const cached = this.imageSources.get(imageKey);
+    if (cached) {
+      return Promise.resolve(cached);
+    }
+
+    let promise = this.resolvePromises.get(imageKey);
+    if (!promise) {
+      const resolver = this.options.resolvePageSrc;
+      promise = resolver
+        ? Promise.resolve(
+            resolver({ page: page as ImagePage, pageIndex, isSpread })
+          )
+        : this.options.assetLoader.resolveImageSource(
+            state.manga.id,
+            page as ImagePage
+          );
+      this.resolvePromises.set(imageKey, promise);
+      promise
+        .then((src) => {
+          this.imageSources.set(imageKey, src);
+        })
+        .finally(() => {
+          this.resolvePromises.delete(imageKey);
+        });
+    }
+    return promise;
   }
 }
 

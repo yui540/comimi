@@ -75,6 +75,7 @@ export class MangaViewerCore implements MangaViewerInstance {
   private forceSettings: ReadonlySet<keyof ViewerSettings> = new Set();
   // 作品ごと設定の「開発者指定デフォルト」。保存値が無い作品に適用する。
   private baseMangaSettings: Pick<ViewerSettings, PerMangaSettingKey>;
+  private initialPageIndex?: number;
   // browserFullscreen 中に退避した body の overflow（未ロック時は null）。
   private bodyOverflowBackup: string | null = null;
 
@@ -97,6 +98,7 @@ export class MangaViewerCore implements MangaViewerInstance {
     this.storage = new IndexedDbStorage(options.storage);
     this.assetLoader = new AssetLoader();
     this.i18n = new I18n(settings.locale, options.translations);
+    this.initialPageIndex = options.initialPageIndex;
     this.store = new ViewerStore(
       createInitialState(options.manga, settings, options.initialPageIndex)
     );
@@ -402,7 +404,7 @@ export class MangaViewerCore implements MangaViewerInstance {
         heightPx: savedWideHeight
       });
     }
-    if (typeof progress === "number") {
+    if (this.initialPageIndex === undefined && typeof progress === "number") {
       this.store.dispatch({ type: "goToPage", pageIndex: progress });
     }
 

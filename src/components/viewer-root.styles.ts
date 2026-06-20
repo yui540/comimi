@@ -39,11 +39,17 @@ export const viewerRootStyles = `
   box-shadow: var(--comimi-shadow-soft);
   overflow: hidden;
   user-select: none;
+  -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
   touch-action: none;
   transition:
     box-shadow 0.24s ease-out,
     background-color 0.16s linear;
+}
+
+.comimi-root *:not(.comimi-html-page):not(.comimi-html-page *) {
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .comimi-root:focus {
@@ -122,7 +128,7 @@ export const viewerRootStyles = `
   position: relative;
   width: 100%;
   height: 20px;
-  background: var(--comimi-panel);
+  background: var(--comimi-panel, #fff);
   cursor: ns-resize;
   touch-action: none;
 }
@@ -136,7 +142,7 @@ export const viewerRootStyles = `
   width: 40px;
   height: 3px;
   border-radius: 999px;
-  background: var(--comimi-handle);
+  background: var(--comimi-handle, #bbb);
   transition:
     width 0.36s cubic-bezier(0.34, 1.56, 0.64, 1),
     height 0.36s cubic-bezier(0.34, 1.56, 0.64, 1),
@@ -147,7 +153,7 @@ export const viewerRootStyles = `
   .comimi-resize-handle:hover::after {
     width: 52px;
     height: 5px;
-    background: var(--comimi-handle-strong);
+    background: var(--comimi-handle-strong, #888);
   }
 }
 

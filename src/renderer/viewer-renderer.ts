@@ -66,6 +66,19 @@ export class ViewerRenderer {
   private notifications?: Notifications;
   private destroyed = false;
 
+  private readonly handleVisibilityChange = (): void => {
+    if (this.destroyed || document.visibilityState !== "visible") {
+      return;
+    }
+    if (this.overlayApplyRaf !== undefined) {
+      cancelAnimationFrame(this.overlayApplyRaf);
+      this.overlayApplyRaf = undefined;
+    }
+    this.applyOverlayVisibility(this.prevOverlayVisible);
+    this.applyCenterMessageVisibility(this.prevCenterMessageVisible);
+    this.applyMoveGuideVisibility(this.prevMoveGuideVisible);
+  };
+
   constructor(
     private container: HTMLElement,
     private callbacks: RendererCallbacks,
@@ -89,6 +102,7 @@ export class ViewerRenderer {
     this.root = createViewerRoot({ className });
     this.container.replaceChildren(this.root);
     this.observeViewSize();
+    document.addEventListener("visibilitychange", this.handleVisibilityChange);
   }
 
   private observeViewSize(): void {
@@ -352,6 +366,10 @@ export class ViewerRenderer {
       cancelAnimationFrame(this.overlayApplyRaf);
       this.overlayApplyRaf = undefined;
     }
+    document.removeEventListener(
+      "visibilitychange",
+      this.handleVisibilityChange
+    );
     this.cleanup.forEach((clean) => clean());
     this.cleanup = [];
     this.viewSizeObserver?.disconnect();

@@ -65,6 +65,13 @@ export function mergeSettings(
   };
 }
 
+export function clampZoom(
+  scale: number,
+  zoom: ViewerSettings["zoom"]
+): number {
+  return Math.min(Math.max(scale, zoom.min), zoom.max);
+}
+
 export function clampPageIndex(pageIndex: number, pageCount: number): number {
   if (pageCount <= 0) {
     return 0;

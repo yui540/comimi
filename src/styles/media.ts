@@ -11,6 +11,8 @@ export const breakPoints = {
   mediumSmall: 767
 };
 
+export const mobileViewportQuery = `(max-width: ${breakPoints.mediumSmall}px)`;
+
 export const media = {
   mediumUp: minWidthMediaQuery(breakPoints.mediumSmall + 1),
   smallDown: maxWidthMediaQuery(breakPoints.mediumSmall),

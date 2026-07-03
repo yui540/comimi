@@ -9,14 +9,17 @@ import {
   getAdjacentPageIndexes,
   getDisplayedPageIndexes,
   getPageGroupSide,
-  isSwipeToNext
+  isSwipeToNext,
+  type AdjacentDirection
 } from "../components/page-layout";
 import { PageStage } from "../components/page-stage";
 import { Notifications } from "../components/notifications";
 import { renderSplashScreen } from "../components/splash-screen";
 import { resolveMascot } from "../components/mascot";
 import { createViewerRoot } from "../components/viewer-root";
+import { clampZoom } from "../defaults";
 import { I18n } from "../i18n/i18n";
+import { mobileViewportQuery } from "../styles/media";
 import { ensureViewerStyles } from "../styles/style-registry";
 import type {
   HideableControl,
@@ -36,6 +39,34 @@ interface DragStart {
 
 const PAGE_TURN_ANIMATION_MS = 180;
 const SPLASH_DURATION_MS = 2000;
+
+// スワイプ（ページめくり）を開始させない要素。
+// リンク（a）はジェスチャー追跡を許可し、タップなら遷移／スワイプならめくりに振り分ける。
+const SWIPE_BLOCKING_SELECTOR = [
+  ".comimi-arrow-button",
+  ".comimi-view-switcher",
+  ".comimi-controls-dock",
+  ".comimi-menu-panel",
+  ".comimi-settings-panel",
+  "button",
+  "input",
+  "select",
+  "textarea",
+  "iframe"
+].join(",");
+
+const INTERACTIVE_SELECTOR = `${SWIPE_BLOCKING_SELECTOR},a`;
+
+export interface ViewerRendererOptions {
+  callbacks: RendererCallbacks;
+  assetLoader: AssetLoader;
+  i18n: I18n;
+  className?: string;
+  resolvePageSrc?: PageSrcResolver;
+  lockLayoutMode?: boolean;
+  mascot?: MascotOption | MascotAreaOptions;
+  hidden?: ReadonlySet<HideableControl>;
+}
 
 export class ViewerRenderer {
   private root: HTMLDivElement;
@@ -61,10 +92,15 @@ export class ViewerRenderer {
   private arrowButtons?: ArrowButtons;
   private resizeHandle?: HTMLDivElement;
   private viewSizeObserver?: ResizeObserver;
-  private autoplayOverlayProgress?: HTMLDivElement;
-  private autoplayOverlayProgressBar?: HTMLSpanElement;
+  private autoplayProgress?: { root: HTMLDivElement; bar: HTMLSpanElement };
   private notifications?: Notifications;
   private destroyed = false;
+
+  private readonly callbacks: RendererCallbacks;
+  private readonly i18n: I18n;
+  private readonly lockLayoutMode: boolean;
+  private readonly mascot?: MascotOption | MascotAreaOptions;
+  private readonly hidden: ReadonlySet<HideableControl>;
 
   private readonly handleVisibilityChange = (): void => {
     if (this.destroyed || document.visibilityState !== "visible") {
@@ -81,25 +117,23 @@ export class ViewerRenderer {
 
   constructor(
     private container: HTMLElement,
-    private callbacks: RendererCallbacks,
-    private assetLoader: AssetLoader,
-    private i18n: I18n,
-    className?: string,
-    resolvePageSrc?: PageSrcResolver,
-    private lockLayoutMode = false,
-    private mascot?: MascotOption | MascotAreaOptions,
-    private hidden: ReadonlySet<HideableControl> = new Set()
+    options: ViewerRendererOptions
   ) {
+    this.callbacks = options.callbacks;
+    this.i18n = options.i18n;
+    this.lockLayoutMode = options.lockLayoutMode ?? false;
+    this.mascot = options.mascot;
+    this.hidden = options.hidden ?? new Set();
     ensureViewerStyles();
     this.pageStage = new PageStage({
-      assetLoader: this.assetLoader,
+      assetLoader: options.assetLoader,
       i18n: this.i18n,
       isMobileViewport: () => this.isMobileViewport(),
-      resolvePageSrc,
+      resolvePageSrc: options.resolvePageSrc,
       loadingMascot: resolveMascot(this.mascot, "loading"),
       errorMascot: resolveMascot(this.mascot, "error")
     });
-    this.root = createViewerRoot({ className });
+    this.root = createViewerRoot({ className: options.className });
     this.container.replaceChildren(this.root);
     this.observeViewSize();
     document.addEventListener("visibilitychange", this.handleVisibilityChange);
@@ -212,7 +246,7 @@ export class ViewerRenderer {
         child !== viewModeSwitcherEl &&
         child !== controlsDockEl &&
         child !== this.splash &&
-        child !== this.autoplayOverlayProgress &&
+        child !== this.autoplayProgress?.root &&
         child !== notificationsEl &&
         child !== arrowButtonsEl
       ) {
@@ -389,7 +423,7 @@ export class ViewerRenderer {
 
   animatePageTurn(
     state: ViewerState,
-    direction: "previous" | "next",
+    direction: AdjacentDirection,
     onComplete: () => void
   ): boolean {
     window.clearTimeout(this.pageTurnTimer);
@@ -412,36 +446,32 @@ export class ViewerRenderer {
   }
 
   isMobileViewport(): boolean {
-    return window.matchMedia("(max-width: 767px)").matches;
+    return window.matchMedia(mobileViewportQuery).matches;
   }
 
   private syncAutoplayOverlayProgress(state: ViewerState): void {
     if (!state.autoPageTurnEnabled) {
-      if (this.autoplayOverlayProgress) {
-        this.autoplayOverlayProgress.remove();
-        this.autoplayOverlayProgress = undefined;
-        this.autoplayOverlayProgressBar = undefined;
-      }
+      this.autoplayProgress?.root.remove();
+      this.autoplayProgress = undefined;
       return;
     }
 
-    if (!this.autoplayOverlayProgress) {
-      this.autoplayOverlayProgress = document.createElement("div");
-      this.autoplayOverlayProgress.className = "comimi-autoplay-overlay-progress";
-      this.autoplayOverlayProgressBar = document.createElement("span");
-      this.autoplayOverlayProgressBar.className =
-        "comimi-autoplay-overlay-progress-bar";
-      this.autoplayOverlayProgress.append(this.autoplayOverlayProgressBar);
+    if (!this.autoplayProgress) {
+      const root = document.createElement("div");
+      root.className = "comimi-autoplay-overlay-progress";
+      const bar = document.createElement("span");
+      bar.className = "comimi-autoplay-overlay-progress-bar";
+      root.append(bar);
+      this.autoplayProgress = { root, bar };
     }
 
-    if (this.autoplayOverlayProgress.parentNode !== this.root) {
-      this.root.appendChild(this.autoplayOverlayProgress);
+    const { root, bar } = this.autoplayProgress;
+    if (root.parentNode !== this.root) {
+      this.root.appendChild(root);
     }
 
-    this.autoplayOverlayProgress.dataset.visible = String(
-      !state.overlayVisible
-    );
-    this.autoplayOverlayProgressBar!.style.animationDuration = `${state.settings.autoPageTurnIntervalMs}ms`;
+    root.dataset.visible = String(!state.overlayVisible);
+    bar.style.animationDuration = `${state.settings.autoPageTurnIntervalMs}ms`;
   }
 
   private clampPan(
@@ -466,13 +496,6 @@ export class ViewerRenderer {
       x: Math.min(Math.max(panX, -maxX), maxX),
       y: Math.min(Math.max(panY, -maxY), maxY)
     };
-  }
-
-  private clampedZoom(scale: number, state: ViewerState): number {
-    return Math.min(
-      Math.max(scale, state.settings.zoom.min),
-      state.settings.zoom.max
-    );
   }
 
   private syncResizeHandle(needsHandle: boolean): void {
@@ -594,7 +617,7 @@ export class ViewerRenderer {
 
       const delta =
         event.deltaY > 0 ? -state.settings.zoom.step : state.settings.zoom.step;
-      const nextScale = this.clampedZoom(baseScale + delta, state);
+      const nextScale = clampZoom(baseScale + delta, state.settings.zoom);
 
       // カーソル直下の点を固定したままズームする（カーソル中心ズーム）。
       // transform-origin はスロット中心なので、スロット中心からの相対座標で計算。
@@ -639,23 +662,7 @@ export class ViewerRenderer {
       }
 
       event.preventDefault();
-      const deltaX = event.clientX - this.mouseStart.x;
-      const deltaY = event.clientY - this.mouseStart.y;
-      if (Math.abs(deltaX) > 6 || Math.abs(deltaY) > 6) {
-        this.suppressNextClick = true;
-      }
-
-      if (state.zoomScale <= 1) {
-        this.setStageDragOffset(
-          this.constrainDragOffset(deltaX, deltaY, state)
-        );
-        return;
-      }
-
-      const panX = this.mouseStart.panX + event.clientX - this.mouseStart.x;
-      const panY = this.mouseStart.panY + event.clientY - this.mouseStart.y;
-      const clamped = this.clampPan(panX, panY, state.zoomScale, state);
-      this.callbacks.setPan(clamped.x, clamped.y);
+      this.handleDragMove(event.clientX, event.clientY, this.mouseStart, state);
     };
     const onMouseUp = (event: MouseEvent) => {
       if (!this.mouseStart) {
@@ -707,7 +714,7 @@ export class ViewerRenderer {
         const requested =
           this.pinchStart.scale *
           (touchDistance(event) / this.pinchStart.distance);
-        const nextScale = this.clampedZoom(requested, state);
+        const nextScale = clampZoom(requested, state.settings.zoom);
         const clampedPan = this.clampPan(
           state.panX,
           state.panY,
@@ -728,23 +735,7 @@ export class ViewerRenderer {
       }
 
       event.preventDefault();
-      const deltaX = touch.clientX - this.touchStart.x;
-      const deltaY = touch.clientY - this.touchStart.y;
-      if (Math.abs(deltaX) > 6 || Math.abs(deltaY) > 6) {
-        this.suppressNextClick = true;
-      }
-
-      if (state.zoomScale <= 1) {
-        this.setStageDragOffset(
-          this.constrainDragOffset(deltaX, deltaY, state)
-        );
-        return;
-      }
-
-      const panX = this.touchStart.panX + touch.clientX - this.touchStart.x;
-      const panY = this.touchStart.panY + touch.clientY - this.touchStart.y;
-      const clamped = this.clampPan(panX, panY, state.zoomScale, state);
-      this.callbacks.setPan(clamped.x, clamped.y);
+      this.handleDragMove(touch.clientX, touch.clientY, this.touchStart, state);
     };
     const onTouchEnd = (event: TouchEvent) => {
       if (event.touches.length < 2) {
@@ -805,6 +796,32 @@ export class ViewerRenderer {
     );
   }
 
+  private handleDragMove(
+    clientX: number,
+    clientY: number,
+    start: DragStart,
+    state: ViewerState
+  ): void {
+    const deltaX = clientX - start.x;
+    const deltaY = clientY - start.y;
+    if (Math.abs(deltaX) > 6 || Math.abs(deltaY) > 6) {
+      this.suppressNextClick = true;
+    }
+
+    if (state.zoomScale <= 1) {
+      this.setStageDragOffset(this.constrainDragOffset(deltaX, deltaY, state));
+      return;
+    }
+
+    const clamped = this.clampPan(
+      start.panX + deltaX,
+      start.panY + deltaY,
+      state.zoomScale,
+      state
+    );
+    this.callbacks.setPan(clamped.x, clamped.y);
+  }
+
   private handleSwipeEnd(
     deltaX: number,
     deltaY: number,
@@ -835,21 +852,23 @@ export class ViewerRenderer {
     }
 
     if (!this.requestPageTurn(state, direction)) {
-      direction === "next"
-        ? this.callbacks.commitNextPage()
-        : this.callbacks.commitPreviousPage();
+      this.commitPage(direction);
     }
+  }
+
+  private commitPage(direction: AdjacentDirection): void {
+    direction === "next"
+      ? this.callbacks.commitNextPage()
+      : this.callbacks.commitPreviousPage();
   }
 
   private requestPageTurn(
     state: ViewerState,
-    direction: "previous" | "next"
+    direction: AdjacentDirection
   ): boolean {
-    return this.animatePageTurn(state, direction, () => {
-      direction === "next"
-        ? this.callbacks.commitNextPage()
-        : this.callbacks.commitPreviousPage();
-    });
+    return this.animatePageTurn(state, direction, () =>
+      this.commitPage(direction)
+    );
   }
 
   private constrainDragOffset(
@@ -893,60 +912,26 @@ export class ViewerRenderer {
 
   private getPageTurnTargetOffset(
     state: ViewerState,
-    direction: "previous" | "next"
+    direction: AdjacentDirection
   ): number {
     const side = getPageGroupSide(state, direction);
     return side === "left" ? this.root.clientWidth : -this.root.clientWidth;
   }
 
   private isInteractiveTarget(target: EventTarget | null): boolean {
-    if (!(target instanceof Element)) {
-      return false;
-    }
-
-    return Boolean(
-      target.closest(
-        [
-          ".comimi-arrow-button",
-          ".comimi-view-switcher",
-          ".comimi-controls-dock",
-          ".comimi-menu-panel",
-          ".comimi-settings-panel",
-          "button",
-          "input",
-          "select",
-          "textarea",
-          "a",
-          "iframe"
-        ].join(",")
-      )
-    );
+    return matchesSelector(target, INTERACTIVE_SELECTOR);
   }
 
-  // スワイプ（ページめくり）を開始させない要素。
-  // リンク（a）はジェスチャー追跡を許可し、タップなら遷移／スワイプならめくりに振り分ける。
   private isSwipeBlockingTarget(target: EventTarget | null): boolean {
-    if (!(target instanceof Element)) {
-      return false;
-    }
-
-    return Boolean(
-      target.closest(
-        [
-          ".comimi-arrow-button",
-          ".comimi-view-switcher",
-          ".comimi-controls-dock",
-          ".comimi-menu-panel",
-          ".comimi-settings-panel",
-          "button",
-          "input",
-          "select",
-          "textarea",
-          "iframe"
-        ].join(",")
-      )
-    );
+    return matchesSelector(target, SWIPE_BLOCKING_SELECTOR);
   }
+}
+
+function matchesSelector(
+  target: EventTarget | null,
+  selector: string
+): boolean {
+  return target instanceof Element && target.closest(selector) !== null;
 }
 
 function touchDistance(event: TouchEvent): number {

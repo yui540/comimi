@@ -9,6 +9,7 @@ import type { RendererCallbacks } from "../renderer/renderer-callbacks";
 import { ViewerRenderer } from "../renderer/viewer-renderer";
 import { IndexedDbStorage } from "../storage/indexed-db-storage";
 import { ViewerStore } from "../store/store";
+import { mobileViewportQuery } from "../styles/media";
 import type {
   LayoutMode,
   Manga,
@@ -65,7 +66,7 @@ export class MangaViewerCore implements MangaViewerInstance {
   private i18n: I18n;
   private events = new EventEmitter();
   private unsubscribers: Array<() => void> = [];
-  private notificationTimers = new Map<string, number>();
+  private notificationTimer?: number;
   private autoTimer?: number;
   private bootstrapTimers: number[] = [];
   private destroyed = false;
@@ -134,17 +135,16 @@ export class MangaViewerCore implements MangaViewerInstance {
       resetZoom: () => this.store.dispatch({ type: "resetZoom" })
     };
 
-    this.renderer = new ViewerRenderer(
-      this.container,
+    this.renderer = new ViewerRenderer(this.container, {
       callbacks,
-      this.assetLoader,
-      this.i18n,
-      options.className,
-      options.resolvePageSrc,
-      this.lockLayoutMode,
-      options.mascot,
-      new Set(options.hiddenSettings ?? [])
-    );
+      assetLoader: this.assetLoader,
+      i18n: this.i18n,
+      className: options.className,
+      resolvePageSrc: options.resolvePageSrc,
+      lockLayoutMode: this.lockLayoutMode,
+      mascot: options.mascot,
+      hidden: new Set(options.hiddenSettings ?? [])
+    });
 
     for (const [eventName, handler] of Object.entries(
       options.events ?? {}
@@ -174,10 +174,7 @@ export class MangaViewerCore implements MangaViewerInstance {
       window.clearTimeout(timer);
     }
     this.bootstrapTimers = [];
-    for (const timer of this.notificationTimers.values()) {
-      window.clearTimeout(timer);
-    }
-    this.notificationTimers.clear();
+    window.clearTimeout(this.notificationTimer);
     this.syncBodyScrollLock("inline");
     this.unsubscribers.forEach((unsubscribe) => unsubscribe());
     this.assetLoader.revokeAll();
@@ -236,19 +233,32 @@ export class MangaViewerCore implements MangaViewerInstance {
    * （forceSettings のキーは常にデフォルト優先）。
    */
   private async applyMangaSettings(mangaId: string): Promise<void> {
-    const merged: Partial<ViewerSettings> = { ...this.baseMangaSettings };
     const saved = await this.storage.getMangaSettings(mangaId);
     if (this.destroyed) {
       return;
     }
-    if (saved) {
-      for (const key of PER_MANGA_SETTING_KEYS) {
-        if (!this.forceSettings.has(key) && key in saved) {
-          merged[key] = saved[key] as never;
-        }
+    this.store.dispatch({
+      type: "updateSettings",
+      settings: {
+        ...this.baseMangaSettings,
+        ...this.pickSavedMangaSettings(saved)
+      }
+    });
+  }
+
+  private pickSavedMangaSettings(
+    saved: Partial<ViewerSettings> | undefined
+  ): Partial<ViewerSettings> {
+    const out: Partial<ViewerSettings> = {};
+    if (!saved) {
+      return out;
+    }
+    for (const key of PER_MANGA_SETTING_KEYS) {
+      if (!this.forceSettings.has(key) && key in saved) {
+        out[key] = saved[key] as never;
       }
     }
-    this.store.dispatch({ type: "updateSettings", settings: merged });
+    return out;
   }
 
   goToPage(pageIndex: number): void {
@@ -339,15 +349,18 @@ export class MangaViewerCore implements MangaViewerInstance {
   }
 
   private async bootstrap(): Promise<void> {
-    const savedSettings = await this.storage.getSettings();
-    const savedLayout = await this.storage.getLayout<{
-      mode?: LayoutMode | "theater";
-      wideHeightPx?: number;
-      theaterHeightPx?: number;
-    }>();
     const mangaId = this.store.getState().manga.id;
-    const progress = await this.storage.getProgress(mangaId);
-    const savedMangaSettings = await this.storage.getMangaSettings(mangaId);
+    const [savedSettings, savedLayout, progress, savedMangaSettings] =
+      await Promise.all([
+        this.storage.getSettings(),
+        this.storage.getLayout<{
+          mode?: LayoutMode | "theater";
+          wideHeightPx?: number;
+          theaterHeightPx?: number;
+        }>(),
+        this.storage.getProgress(mangaId),
+        this.storage.getMangaSettings(mangaId)
+      ]);
 
     // await 中に destroy された場合は何もしない（StrictMode の
     // mount→unmount→mount で破棄済みインスタンスが DOM を触るのを防ぐ）。
@@ -373,19 +386,12 @@ export class MangaViewerCore implements MangaViewerInstance {
 
     // 作品ごと設定（保存値があれば）を適用する。
     // 初期状態には開発者デフォルトが入っているので、無ければそのまま。
-    if (savedMangaSettings) {
-      const perMangaToApply: Partial<ViewerSettings> = {};
-      for (const key of PER_MANGA_SETTING_KEYS) {
-        if (!this.forceSettings.has(key) && key in savedMangaSettings) {
-          perMangaToApply[key] = savedMangaSettings[key] as never;
-        }
-      }
-      if (Object.keys(perMangaToApply).length > 0) {
-        this.store.dispatch({
-          type: "updateSettings",
-          settings: perMangaToApply
-        });
-      }
+    const perMangaToApply = this.pickSavedMangaSettings(savedMangaSettings);
+    if (Object.keys(perMangaToApply).length > 0) {
+      this.store.dispatch({
+        type: "updateSettings",
+        settings: perMangaToApply
+      });
     }
     if (
       !this.lockLayoutMode &&
@@ -445,7 +451,6 @@ export class MangaViewerCore implements MangaViewerInstance {
   }
 
   private bindKeyboard(): void {
-    const element = this.renderer.getElement();
     const onKeyDown = (event: KeyboardEvent) => {
       if (!this.shouldHandleKeyboardEvent(event)) {
         return;
@@ -471,10 +476,16 @@ export class MangaViewerCore implements MangaViewerInstance {
           break;
         case "n":
         case "N":
-        case "Escape":
           if (this.lockLayoutMode) break;
           event.preventDefault();
           void this.setLayoutMode("inline");
+          break;
+        case "Escape":
+          event.preventDefault();
+          this.store.dispatch({ type: "setPanel", panel: "none" });
+          if (!this.lockLayoutMode) {
+            void this.setLayoutMode("inline");
+          }
           break;
         case "w":
         case "W":
@@ -532,13 +543,6 @@ export class MangaViewerCore implements MangaViewerInstance {
           });
           break;
         }
-        case "Escape":
-          event.preventDefault();
-          this.store.dispatch({ type: "setPanel", panel: "none" });
-          if (document.fullscreenElement) {
-            void document.exitFullscreen();
-          }
-          break;
       }
     };
 
@@ -552,13 +556,13 @@ export class MangaViewerCore implements MangaViewerInstance {
       return true;
     }
 
-    return !Boolean(
-      target.closest("input, select, textarea, [contenteditable='true']")
+    return !target.closest(
+      "input, select, textarea, [contenteditable='true']"
     );
   }
 
   private bindViewportChange(): void {
-    this.mobileMediaQuery = window.matchMedia("(max-width: 676px)");
+    this.mobileMediaQuery = window.matchMedia(mobileViewportQuery);
     const onChange = () => {
       this.renderer.update(this.store.getState());
     };
@@ -687,10 +691,7 @@ export class MangaViewerCore implements MangaViewerInstance {
     message: string,
     tone: "info" | "success" | "error" = "info"
   ): void {
-    for (const timer of this.notificationTimers.values()) {
-      window.clearTimeout(timer);
-    }
-    this.notificationTimers.clear();
+    window.clearTimeout(this.notificationTimer);
 
     const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     this.store.dispatch({
@@ -703,10 +704,8 @@ export class MangaViewerCore implements MangaViewerInstance {
       }
     });
 
-    const timer = window.setTimeout(() => {
+    this.notificationTimer = window.setTimeout(() => {
       this.store.dispatch({ type: "removeNotification", id });
-      this.notificationTimers.delete(id);
     }, 1500);
-    this.notificationTimers.set(id, timer);
   }
 }

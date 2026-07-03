@@ -1,6 +1,7 @@
 import {
   calculateVisiblePageIndexes,
   clampPageIndex,
+  clampZoom,
   getPageStep,
   mergeSettings
 } from "../defaults";
@@ -111,7 +112,7 @@ export function reducer(state: ViewerState, action: ViewerAction): ViewerState {
       };
 
     case "setZoom": {
-      const zoomScale = clampZoom(action.scale, state);
+      const zoomScale = clampZoom(action.scale, state.settings.zoom);
       // 等倍に戻ったらパンとズーム対象もクリアする。
       if (zoomScale <= 1) {
         return {
@@ -182,11 +183,4 @@ function withVisiblePages(state: ViewerState): ViewerState {
       state.settings
     )
   };
-}
-
-function clampZoom(scale: number, state: ViewerState): number {
-  return Math.min(
-    Math.max(scale, state.settings.zoom.min),
-    state.settings.zoom.max
-  );
 }

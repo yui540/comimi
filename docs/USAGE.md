@@ -78,6 +78,7 @@ interface MangaViewerInstance {
 interface MangaViewerOptions {
   manga: Manga;
   initialPageIndex?: number;
+  initialPageQueryParam?: string;  // 開始ページを読み取る URL クエリのキー（例: "p"）
   locale?: string;          // "ja" | "en" | "zh-CN" | "ko" | "th" | "id"、または独自キー
   translations?: TranslationMap;
   settings?: Partial<ViewerSettings>;
@@ -184,6 +185,35 @@ createMangaViewer(container, {
   lockLayoutMode: true
 });
 ```
+
+## 開始ページの指定
+
+初期表示するページは、以下の優先順位で決まります。
+
+1. **URL クエリパラメータ**（`initialPageQueryParam` を指定した場合のみ）
+2. `initialPageIndex`
+3. IndexedDB に保存された前回の読書位置
+4. 先頭ページ（0）
+
+### `initialPageIndex`
+
+0 始まりの index で開始ページを指定します。`initialPageIndex: 19` で 20 ページ目から開始します。指定すると保存済みの読書位置は無視されます。
+
+### `initialPageQueryParam`（URL クエリから開始ページを指定）
+
+`initialPageQueryParam` にクエリのキーを渡すと、そのキーの値を **1 始まりのページ番号**として読み取り、開始ページに使います。
+
+```ts
+createMangaViewer(container, {
+  manga,
+  initialPageQueryParam: "p"
+});
+```
+
+- 例えば `?p=20` で **20 ページ目**（内部的には index 19）から開始します。
+- **クエリパラメータは最優先**で、`initialPageIndex` の指定や保存済みの読書位置よりも優先されます。
+- 値が数値でない・1 未満・パラメータ自体が無い場合は無視され、上記の優先順位でフォールバックします。
+- 非ブラウザ環境（SSR など）では無視されます。
 
 ## UI 項目を非表示にする
 

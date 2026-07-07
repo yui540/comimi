@@ -115,6 +115,13 @@ export type TranslationMap = Record<string, string>;
 export interface MangaViewerOptions {
   manga: Manga;
   initialPageIndex?: number;
+  /**
+   * URL のクエリパラメータから開始ページを読み取る際のキー。
+   * 例えば `"p"` を指定すると `?p=20` で 20 ページ目（1 始まり）から開始する。
+   * 値が数値でない・1 未満・パラメータ自体が無い場合は無視される。
+   * `initialPageIndex` が明示されている場合は常にそちらを優先する。
+   */
+  initialPageQueryParam?: string;
   locale?: string;
   translations?: TranslationMap;
   settings?: Partial<ViewerSettings>;

@@ -118,6 +118,7 @@ createMangaViewer(container, {
     pages
   },
   locale: "ja",
+  initialPageQueryParam: "p",
   settings: {
     layoutMode: "inline",
     hasCover: true,

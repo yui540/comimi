@@ -58,6 +58,28 @@ function pickPerMangaSettings(
   return out;
 }
 
+/**
+ * クエリパラメータから開始ページの index を読み取る。
+ * `paramKey` 未指定・非ブラウザ環境・値が不正な場合は undefined を返す。
+ * 値は 1 始まりのページ番号として解釈し、0 始まりの index に変換する。
+ */
+function readInitialPageFromQuery(
+  paramKey: string | undefined
+): number | undefined {
+  if (!paramKey || typeof window === "undefined") {
+    return undefined;
+  }
+  const value = new URLSearchParams(window.location.search).get(paramKey);
+  if (value === null) {
+    return undefined;
+  }
+  const page = Number(value);
+  if (!Number.isInteger(page) || page < 1) {
+    return undefined;
+  }
+  return page - 1;
+}
+
 export class MangaViewerCore implements MangaViewerInstance {
   private store: ViewerStore;
   private storage: IndexedDbStorage;
@@ -99,9 +121,13 @@ export class MangaViewerCore implements MangaViewerInstance {
     this.storage = new IndexedDbStorage(options.storage);
     this.assetLoader = new AssetLoader();
     this.i18n = new I18n(settings.locale, options.translations);
-    this.initialPageIndex = options.initialPageIndex;
+    // クエリパラメータがあれば initialPageIndex や保存済み進捗より優先する。
+    // this.initialPageIndex が非 undefined だと bootstrap は保存進捗を適用しない。
+    this.initialPageIndex =
+      readInitialPageFromQuery(options.initialPageQueryParam) ??
+      options.initialPageIndex;
     this.store = new ViewerStore(
-      createInitialState(options.manga, settings, options.initialPageIndex)
+      createInitialState(options.manga, settings, this.initialPageIndex)
     );
 
     const callbacks: RendererCallbacks = {

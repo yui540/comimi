@@ -95,7 +95,7 @@ export const controlsDockStyles = `
   grid-template-columns: auto 1fr;
   column-gap: 10px;
   align-items: center;
-  margin-bottom: 10px;
+  margin-bottom: 14px;
 }
 
 .comimi-seek-text {

@@ -450,7 +450,9 @@ export class ControlsDock {
 
   private applyPopAnimation(element: HTMLElement): void {
     element.classList.remove("comimi-pop-animate");
-    void element.offsetWidth;
+    // SVG 要素は offsetWidth を持たずリフローを強制できないため、
+    // getBoundingClientRect でスタイル再計算を挟んでアニメーションを再始動させる
+    void element.getBoundingClientRect();
     element.classList.add("comimi-pop-animate");
   }
 }

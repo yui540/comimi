@@ -228,7 +228,6 @@ export class ViewerRenderer {
       this.controlsDock = new ControlsDock(
         this.callbacks,
         this.i18n,
-        resolveMascot(this.mascot, "menu"),
         this.hidden,
         this.lockLayoutMode
       );

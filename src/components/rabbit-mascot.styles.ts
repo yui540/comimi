@@ -27,27 +27,9 @@ export const rabbitMascotStyles = `
   transition: fill 0.2s linear;
 }
 
-.comimi-controls-dock > .comimi-rabbit {
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
 .comimi-menu-panel > .comimi-rabbit {
   top: 12px;
   right: 20px;
-}
-
-@media (max-width: 767px) {
-  .comimi-controls-dock > .comimi-rabbit {
-    display: none;
-  }
-}
-
-@media (min-width: 768px) {
-  .comimi-menu-panel > .comimi-rabbit {
-    display: none;
-  }
 }
 
 .comimi-mascot-html {

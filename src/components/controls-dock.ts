@@ -2,14 +2,12 @@ import { I18n } from "../i18n/i18n";
 import type {
   HideableControl,
   MangaPage,
-  MascotOption,
   PageTurnMode,
   ViewerState
 } from "../types";
 import type { RendererCallbacks } from "../renderer/renderer-callbacks";
 import { icon, type IconName } from "./icons";
 import { getPageIndexesForPageIndex } from "./page-layout";
-import { renderRabbitMascot } from "./rabbit-mascot";
 import { SettingsPanel } from "./settings-panel";
 import { ViewModeSwitcher } from "./view-mode-switcher";
 
@@ -58,7 +56,6 @@ export class ControlsDock {
   constructor(
     private callbacks: RendererCallbacks,
     private i18n: I18n,
-    private mascot?: MascotOption,
     private hidden: ReadonlySet<HideableControl> = new Set(),
     private lockLayoutMode = false
   ) {
@@ -70,11 +67,7 @@ export class ControlsDock {
     const bg = document.createElement("div");
     bg.className = "comimi-controls-bg";
 
-    const mascotEl = renderRabbitMascot(this.mascot);
-    const children: Node[] = [bg];
-    if (mascotEl) children.push(mascotEl);
-    children.push(this.buildSeek(), this.buildRow());
-    this.root.append(...children);
+    this.root.append(bg, this.buildSeek(), this.buildRow());
   }
 
   /** 設定パネルはドックの外（ビューワーのルート直下）に配置する。 */

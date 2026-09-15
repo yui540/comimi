@@ -424,24 +424,34 @@ export const menuPanelStyles = `
 }
 
 .comimi-favorite-open {
+  position: relative;
   display: block;
   margin-top: 6px;
   padding: 5px 4px;
-  border-radius: 999px;
-  background: var(--comimi-surface-2);
   color: var(--comimi-muted);
   font-size: 10px;
   font-weight: 700;
   line-height: 1.2;
   text-align: center;
   text-decoration: none;
-  transition: transform 0.36s var(--comimi-spring);
+}
+
+.comimi-favorite-open-bg {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: var(--comimi-surface-2);
+  transition: inset 0.36s var(--comimi-spring);
 }
 
 @media (hover: hover) {
-  .comimi-favorite-open:hover {
-    transform: scale(1.05);
+  .comimi-favorite-open:hover .comimi-favorite-open-bg {
+    inset: -3px;
   }
+}
+
+.comimi-favorite-open-text {
+  position: relative;
 }
 
 .comimi-favorites-inner {

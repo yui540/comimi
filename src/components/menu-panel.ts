@@ -359,7 +359,12 @@ export class MenuPanel {
         open.className = "comimi-favorite-open";
         open.target = "_blank";
         open.rel = "noopener noreferrer";
-        open.textContent = this.i18n.t("favorites.openInNewTab");
+        const openBg = document.createElement("span");
+        openBg.className = "comimi-favorite-open-bg";
+        const openText = document.createElement("span");
+        openText.className = "comimi-favorite-open-text";
+        openText.textContent = this.i18n.t("favorites.openInNewTab");
+        open.append(openBg, openText);
         open.href = this.buildPageUrl(index);
         // 表示中に URL が変わっていても最新の URL で開けるよう、クリック時に張り替える
         open.addEventListener("click", (event) => {

@@ -1,43 +1,20 @@
 export const viewModeSwitcherStyles = `
 .comimi-view-switcher {
-  position: absolute;
-  top: 20px;
-  right: 20px;
+  position: relative;
   display: grid;
-  grid-template-columns: repeat(3, 60px);
-  width: 180px;
-  border-radius: 16px;
-  background: var(--comimi-glass);
-  box-shadow: var(--comimi-shadow);
-  backdrop-filter: blur(5px);
-  pointer-events: auto;
-  transition:
-    transform 0.6s var(--comimi-spring),
-    opacity 0.3s linear;
-}
-
-.comimi-view-switcher[data-overlay="false"] {
-  transform: translateY(-35px);
-  opacity: 0;
-  pointer-events: none;
-  transition:
-    transform 0.3s var(--comimi-spring),
-    opacity 0.15s linear;
-}
-
-@media (hover: hover) {
-  .comimi-view-switcher:hover {
-    transform: scaleX(1.03);
-  }
+  grid-template-columns: repeat(3, 42px);
+  width: 126px;
+  border-radius: 12px;
+  background: var(--comimi-surface-2);
 }
 
 .comimi-view-switcher-indicator {
   position: absolute;
   top: 0;
   left: 0;
-  width: 60px;
+  width: 42px;
   height: 100%;
-  border-radius: 16px;
+  border-radius: 12px;
   background: var(--comimi-muted);
   transition: transform 0.36s var(--comimi-spring);
 }
@@ -45,10 +22,9 @@ export const viewModeSwitcherStyles = `
 .comimi-view-switcher-button {
   position: relative;
   display: grid;
-  row-gap: 5px;
   justify-items: center;
   align-content: center;
-  height: 58px;
+  height: 36px;
   padding: 0;
   border: 0;
   background: transparent;
@@ -62,8 +38,8 @@ export const viewModeSwitcherStyles = `
 }
 
 .comimi-view-switcher-icon-wrap {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   transform-origin: center bottom;
 }
 
@@ -76,60 +52,5 @@ export const viewModeSwitcherStyles = `
 
 .comimi-view-switcher-icon-wrap.comimi-pop-animate {
   animation: comimi-pop 0.5s ease-in-out 0.1s both;
-}
-
-.comimi-view-switcher-label {
-  color: currentColor;
-  font-size: 10px;
-  font-weight: 500;
-  text-align: center;
-  transition: color 0.2s linear;
-}
-
-/* コントロールドック内に置くコンパクト版（モバイル幅のみ表示） */
-.comimi-view-switcher[data-compact="true"] {
-  position: relative;
-  top: auto;
-  right: auto;
-  grid-template-columns: repeat(3, 42px);
-  width: 126px;
-  border-radius: 12px;
-  background: var(--comimi-surface-2);
-  box-shadow: none;
-  backdrop-filter: none;
-  transform: none;
-  opacity: 1;
-  transition: none;
-}
-
-.comimi-view-switcher[data-compact="true"] .comimi-view-switcher-indicator {
-  width: 42px;
-  border-radius: 12px;
-}
-
-.comimi-view-switcher[data-compact="true"] .comimi-view-switcher-button {
-  row-gap: 0;
-  height: 36px;
-}
-
-.comimi-view-switcher[data-compact="true"] .comimi-view-switcher-icon-wrap {
-  width: 18px;
-  height: 18px;
-}
-
-.comimi-view-switcher[data-compact="true"] .comimi-view-switcher-label {
-  display: none;
-}
-
-@media (min-width: 768px) {
-  .comimi-view-switcher[data-compact="true"] {
-    display: none;
-  }
-}
-
-@media (max-width: 767px) {
-  .comimi-view-switcher:not([data-compact="true"]) {
-    display: none;
-  }
 }
 `;

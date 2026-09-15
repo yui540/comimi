@@ -36,6 +36,7 @@ export class ControlsDock {
 
   private side!: HTMLDivElement;
   private pageMode!: HTMLDivElement;
+  private pageModeIndicator!: HTMLSpanElement;
   private pageModeSingleBtn!: HTMLButtonElement;
   private pageModeSpreadBtn!: HTMLButtonElement;
   private pageModeSingleIcon!: HTMLElement;
@@ -138,6 +139,8 @@ export class ControlsDock {
     const isSpread = state.settings.pageTurnMode === "spread";
     this.pageModeSingleBtn.dataset.selected = String(!isSpread);
     this.pageModeSpreadBtn.dataset.selected = String(isSpread);
+    // CSS の grid-template-columns（42px）と揃える
+    this.pageModeIndicator.style.transform = `translateX(${isSpread ? 42 : 0}px)`;
 
     const pageModeChanged =
       this.prevPageTurnMode !== undefined &&
@@ -307,16 +310,9 @@ export class ControlsDock {
     return row;
   }
 
-  // モバイル幅では上部のレイアウト切替を出さず、ドック中央にコンパクト版を置く。
   private buildCenter(): HTMLDivElement {
     const center = document.createElement("div");
     center.className = "comimi-controls-center";
-    if (!this.lockLayoutMode && !this.hidden.has("viewMode")) {
-      this.viewModeSwitcher = new ViewModeSwitcher(this.callbacks, this.i18n, {
-        compact: true
-      });
-      center.append(this.viewModeSwitcher.getElement());
-    }
     return center;
   }
 
@@ -364,6 +360,12 @@ export class ControlsDock {
     const pageModeWrapper = document.createElement("div");
     pageModeWrapper.className = "comimi-page-mode-wrapper";
 
+    // 表示モード切替と同じ、選択位置へスライドするインジケーター
+    this.pageModeIndicator = document.createElement("span");
+    this.pageModeIndicator.className = "comimi-page-mode-indicator";
+    this.pageModeIndicator.style.transform = "translateX(0px)";
+    pageModeWrapper.append(this.pageModeIndicator);
+
     [
       this.pageModeSingleBtn,
       this.pageModeSingleIcon,
@@ -389,7 +391,14 @@ export class ControlsDock {
     ] = this.buildSettings();
     this.settings = new SettingsPanel(this.callbacks, this.i18n, this.hidden);
 
-    this.side.append(this.pageMode, this.settingsContainer);
+    // 表示モード切替は設定ボタンの横に置く（モバイル・PC 共通）。
+    const sideChildren: HTMLElement[] = [this.pageMode];
+    if (!this.lockLayoutMode && !this.hidden.has("viewMode")) {
+      this.viewModeSwitcher = new ViewModeSwitcher(this.callbacks, this.i18n);
+      sideChildren.push(this.viewModeSwitcher.getElement());
+    }
+    sideChildren.push(this.settingsContainer);
+    this.side.append(...sideChildren);
     return this.side;
   }
 

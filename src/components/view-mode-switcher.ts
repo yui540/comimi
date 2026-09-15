@@ -4,8 +4,7 @@ import type { RendererCallbacks } from "../renderer/renderer-callbacks";
 import { icon, type IconName } from "./icons";
 
 // インジケーターの移動量。CSS の grid-template-columns と揃える。
-const DEFAULT_BUTTON_WIDTH = 60;
-const COMPACT_BUTTON_WIDTH = 42;
+const BUTTON_WIDTH = 42;
 
 interface ModeEntry {
   mode: LayoutMode;
@@ -13,28 +12,22 @@ interface ModeEntry {
   labelKey: string;
   button: HTMLButtonElement;
   iconWrap: HTMLSpanElement;
+  tooltip: HTMLSpanElement;
 }
 
+/** コントロールドック内（設定ボタンの横）に置く表示モード切替。 */
 export class ViewModeSwitcher {
   private root: HTMLDivElement;
   private indicator: HTMLSpanElement;
-  private tooltip: HTMLSpanElement;
   private entries: ModeEntry[];
   private prevMode?: LayoutMode;
-  private readonly buttonWidth: number;
 
   constructor(
     private callbacks: RendererCallbacks,
-    private i18n: I18n,
-    options: { compact?: boolean } = {}
+    private i18n: I18n
   ) {
     this.root = document.createElement("div");
-    this.root.className = "comimi-view-switcher comimi-has-tooltip";
-    this.root.dataset.overlay = "false";
-    this.root.dataset.compact = String(options.compact ?? false);
-    this.buttonWidth = options.compact
-      ? COMPACT_BUTTON_WIDTH
-      : DEFAULT_BUTTON_WIDTH;
+    this.root.className = "comimi-view-switcher";
 
     this.indicator = document.createElement("span");
     this.indicator.className = "comimi-view-switcher-indicator";
@@ -50,7 +43,7 @@ export class ViewModeSwitcher {
     this.entries = modes.map(([mode, labelKey, iconName]) => {
       const button = document.createElement("button");
       button.type = "button";
-      button.className = "comimi-view-switcher-button";
+      button.className = "comimi-view-switcher-button comimi-has-tooltip";
       button.dataset.selected = "false";
       button.addEventListener("click", (event) => {
         event.stopPropagation();
@@ -63,20 +56,16 @@ export class ViewModeSwitcher {
       iconElement.classList.add("comimi-view-switcher-icon");
       iconWrap.append(iconElement);
 
-      const label = document.createElement("span");
-      label.className = "comimi-view-switcher-label";
-      label.textContent = i18n.t(labelKey);
+      const tooltip = document.createElement("span");
+      tooltip.className = "comimi-tooltip";
+      tooltip.textContent = i18n.t(labelKey);
+      button.setAttribute("aria-label", i18n.t(labelKey));
 
-      button.append(iconWrap, label);
+      button.append(iconWrap, tooltip);
       this.root.append(button);
 
-      return { mode, iconName, labelKey, button, iconWrap };
+      return { mode, iconName, labelKey, button, iconWrap, tooltip };
     });
-
-    this.tooltip = document.createElement("span");
-    this.tooltip.className = "comimi-tooltip";
-    this.tooltip.textContent = i18n.t("overlay.layout");
-    this.root.append(this.tooltip);
   }
 
   getElement(): HTMLElement {
@@ -84,14 +73,12 @@ export class ViewModeSwitcher {
   }
 
   update(state: ViewerState): void {
-    this.root.dataset.overlay = String(state.overlayVisible);
-
     const selectedIndex = Math.max(
       0,
       this.entries.findIndex((entry) => entry.mode === state.layout.mode)
     );
     this.indicator.style.transform = `translateX(${
-      selectedIndex * this.buttonWidth
+      selectedIndex * BUTTON_WIDTH
     }px)`;
 
     const changed =
@@ -101,11 +88,11 @@ export class ViewModeSwitcher {
       const isSelected = entry.mode === state.layout.mode;
       entry.button.dataset.selected = String(isSelected);
       entry.iconWrap.classList.toggle("comimi-pop-animate", changed && isSelected);
-      entry.button.querySelector(".comimi-view-switcher-label")!.textContent =
-        this.i18n.t(entry.labelKey);
+      const label = this.i18n.t(entry.labelKey);
+      entry.tooltip.textContent = label;
+      entry.button.setAttribute("aria-label", label);
     }
 
-    this.tooltip.textContent = this.i18n.t("overlay.layout");
     this.prevMode = state.layout.mode;
   }
 }

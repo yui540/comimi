@@ -402,53 +402,51 @@ export const controlsDockStyles = `
 
 .comimi-page-mode {
   position: relative;
-  width: 80px;
-  height: 30px;
 }
 
 .comimi-page-mode-wrapper {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 80px;
-  height: 30px;
+  position: relative;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, 42px);
+  width: 84px;
+  border-radius: 12px;
   background: var(--comimi-surface-2);
-  border-radius: 8px;
-  transform: translate(-50%, -50%);
-  transition: width 0.36s var(--comimi-spring);
 }
 
-@media (hover: hover) {
-  .comimi-page-mode-wrapper:hover {
-    width: 95px;
-  }
+.comimi-page-mode-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 42px;
+  height: 100%;
+  border-radius: 12px;
+  background: var(--comimi-muted);
+  transition: transform 0.36s var(--comimi-spring);
 }
 
 .comimi-page-mode-button {
   position: relative;
   display: grid;
-  place-content: center;
-  width: 100%;
-  height: 100%;
+  justify-items: center;
+  align-content: center;
+  height: 36px;
   padding: 0;
   border: 0;
   background: transparent;
   color: var(--comimi-muted);
   cursor: pointer;
+  transition: color 0.2s linear;
+}
+
+.comimi-page-mode-button[data-selected="true"] {
+  color: var(--comimi-white);
 }
 
 .comimi-page-mode-icon {
   display: block;
-  width: 20px;
-  opacity: 0.3;
+  width: 18px;
+  color: currentColor;
   transform-origin: center bottom;
-  transition: opacity 0.2s ease-in-out;
-}
-
-.comimi-page-mode-button[data-selected="true"] .comimi-page-mode-icon {
-  opacity: 1;
 }
 
 .comimi-page-mode-icon.comimi-pop-animate {
@@ -547,11 +545,6 @@ export const controlsDockStyles = `
 
   .comimi-autoplay-progress {
     width: 80px;
-  }
-
-  .comimi-controls-center {
-    justify-content: end;
-    padding-right: 16px;
   }
 
   .comimi-seek {

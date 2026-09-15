@@ -353,6 +353,22 @@ export class MenuPanel {
       });
 
       cell.append(this.buildPageListItem(page, index), remove);
+
+      if (this.options.pageQueryParam) {
+        const open = document.createElement("a");
+        open.className = "comimi-favorite-open";
+        open.target = "_blank";
+        open.rel = "noopener noreferrer";
+        open.textContent = this.i18n.t("favorites.openInNewTab");
+        open.href = this.buildPageUrl(index);
+        // 表示中に URL が変わっていても最新の URL で開けるよう、クリック時に張り替える
+        open.addEventListener("click", (event) => {
+          event.stopPropagation();
+          open.href = this.buildPageUrl(index);
+        });
+        cell.append(open);
+      }
+
       this.favoritesGrid.append(cell);
     }
     const isEmpty = this.favoritesGrid.childElementCount === 0;
@@ -714,6 +730,16 @@ export class MenuPanel {
 
     view.append(inner, this.renderBackButton());
     return [view, input];
+  }
+
+  /** 指定ページを開くクエリパラメータ付きの現在 URL を組み立てる。 */
+  private buildPageUrl(pageIndex: number): string {
+    if (typeof window === "undefined" || !this.options.pageQueryParam) {
+      return "";
+    }
+    const url = new URL(window.location.href);
+    url.searchParams.set(this.options.pageQueryParam, String(pageIndex + 1));
+    return url.toString();
   }
 
   private buildShareUrl(state: ViewerState): string {

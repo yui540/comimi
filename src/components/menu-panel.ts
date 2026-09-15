@@ -316,7 +316,7 @@ export class MenuPanel {
     return item;
   }
 
-  // 「ここすき！」一覧は登録順に並べる。ページ一覧側にはハートのバッジを出す。
+  // 「ここすき！」一覧はページ番号の若い順に並べる。ページ一覧側にはハートのバッジを出す。
   private refreshFavorites(state: ViewerState): void {
     const favoriteIds = new Set(state.favoritePageIds);
     for (const [index, item] of this.pageListItems) {
@@ -333,8 +333,11 @@ export class MenuPanel {
     const indexById = new Map(
       state.manga.pages.map((page, index) => [page.id, index] as const)
     );
+    const sortedPageIds = [...state.favoritePageIds].sort(
+      (a, b) => (indexById.get(a) ?? Infinity) - (indexById.get(b) ?? Infinity)
+    );
     this.favoritesGrid.replaceChildren();
-    for (const pageId of state.favoritePageIds) {
+    for (const pageId of sortedPageIds) {
       const index = indexById.get(pageId);
       const page = index === undefined ? undefined : state.manga.pages[index];
       if (index === undefined || !page) {

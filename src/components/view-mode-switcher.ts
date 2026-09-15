@@ -87,12 +87,22 @@ export class ViewModeSwitcher {
     for (const entry of this.entries) {
       const isSelected = entry.mode === state.layout.mode;
       entry.button.dataset.selected = String(isSelected);
-      entry.iconWrap.classList.toggle("comimi-pop-animate", changed && isSelected);
+      if (changed && isSelected) {
+        this.applyPopAnimation(entry.iconWrap);
+      }
       const label = this.i18n.t(entry.labelKey);
       entry.tooltip.textContent = label;
       entry.button.setAttribute("aria-label", label);
     }
 
     this.prevMode = state.layout.mode;
+  }
+
+  private applyPopAnimation(element: HTMLElement): void {
+    element.classList.remove("comimi-pop-animate");
+    // クラスの外し→付け直しが同一フレームで相殺されないよう、
+    // getBoundingClientRect でスタイル再計算を挟んで確実に再始動させる
+    void element.getBoundingClientRect();
+    element.classList.add("comimi-pop-animate");
   }
 }

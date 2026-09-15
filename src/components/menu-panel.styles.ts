@@ -423,6 +423,37 @@ export const menuPanelStyles = `
   transform: translate(-50%, -50%) rotate(-45deg);
 }
 
+.comimi-favorite-open {
+  position: relative;
+  display: block;
+  margin-top: 6px;
+  padding: 5px 4px;
+  color: var(--comimi-muted);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
+}
+
+.comimi-favorite-open-bg {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: var(--comimi-surface-2);
+  transition: inset 0.36s var(--comimi-spring);
+}
+
+@media (hover: hover) {
+  .comimi-favorite-open:hover .comimi-favorite-open-bg {
+    inset: -3px;
+  }
+}
+
+.comimi-favorite-open-text {
+  position: relative;
+}
+
 .comimi-favorites-inner {
   box-sizing: border-box;
   padding: 0 16px;
@@ -473,7 +504,7 @@ export const menuPanelStyles = `
   padding: 8px;
   text-align: center;
   color: var(--comimi-faint);
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
   line-height: 1.4;
 }

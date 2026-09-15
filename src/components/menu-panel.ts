@@ -316,7 +316,7 @@ export class MenuPanel {
     return item;
   }
 
-  // 「ここすき！」一覧は登録順に並べる。ページ一覧側にはハートのバッジを出す。
+  // 「ここすき！」一覧はページ番号の若い順に並べる。ページ一覧側にはハートのバッジを出す。
   private refreshFavorites(state: ViewerState): void {
     const favoriteIds = new Set(state.favoritePageIds);
     for (const [index, item] of this.pageListItems) {
@@ -333,8 +333,11 @@ export class MenuPanel {
     const indexById = new Map(
       state.manga.pages.map((page, index) => [page.id, index] as const)
     );
+    const sortedPageIds = [...state.favoritePageIds].sort(
+      (a, b) => (indexById.get(a) ?? Infinity) - (indexById.get(b) ?? Infinity)
+    );
     this.favoritesGrid.replaceChildren();
-    for (const pageId of state.favoritePageIds) {
+    for (const pageId of sortedPageIds) {
       const index = indexById.get(pageId);
       const page = index === undefined ? undefined : state.manga.pages[index];
       if (index === undefined || !page) {
@@ -353,6 +356,27 @@ export class MenuPanel {
       });
 
       cell.append(this.buildPageListItem(page, index), remove);
+
+      if (this.options.pageQueryParam) {
+        const open = document.createElement("a");
+        open.className = "comimi-favorite-open";
+        open.target = "_blank";
+        open.rel = "noopener noreferrer";
+        const openBg = document.createElement("span");
+        openBg.className = "comimi-favorite-open-bg";
+        const openText = document.createElement("span");
+        openText.className = "comimi-favorite-open-text";
+        openText.textContent = this.i18n.t("favorites.openInNewTab");
+        open.append(openBg, openText);
+        open.href = this.buildPageUrl(index);
+        // 表示中に URL が変わっていても最新の URL で開けるよう、クリック時に張り替える
+        open.addEventListener("click", (event) => {
+          event.stopPropagation();
+          open.href = this.buildPageUrl(index);
+        });
+        cell.append(open);
+      }
+
       this.favoritesGrid.append(cell);
     }
     const isEmpty = this.favoritesGrid.childElementCount === 0;
@@ -714,6 +738,16 @@ export class MenuPanel {
 
     view.append(inner, this.renderBackButton());
     return [view, input];
+  }
+
+  /** 指定ページを開くクエリパラメータ付きの現在 URL を組み立てる。 */
+  private buildPageUrl(pageIndex: number): string {
+    if (typeof window === "undefined" || !this.options.pageQueryParam) {
+      return "";
+    }
+    const url = new URL(window.location.href);
+    url.searchParams.set(this.options.pageQueryParam, String(pageIndex + 1));
+    return url.toString();
   }
 
   private buildShareUrl(state: ViewerState): string {

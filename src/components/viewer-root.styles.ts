@@ -25,7 +25,7 @@ export const viewerRootStyles = `
   --comimi-handle-strong: #888;
   --comimi-mascot: #fff;
   --comimi-mascot-shade: #e0e0e0;
-  --comimi-love: #ff9fb6;
+  --comimi-love: #ff8fa9;
   --comimi-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   background: var(--comimi-bg);
   color: var(--comimi-fg);

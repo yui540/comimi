@@ -4,7 +4,6 @@ import { renderCenterMessage } from "../components/center-message";
 import { ControlsDock } from "../components/controls-dock";
 import { MenuPanel } from "../components/menu-panel";
 import { renderMoveDirectionGuide } from "../components/move-direction-guide";
-import { ViewModeSwitcher } from "../components/view-mode-switcher";
 import {
   getAdjacentPageIndexes,
   getPageGroupSide,
@@ -100,7 +99,6 @@ export class ViewerRenderer {
   private prevMoveGuideVisible = false;
   private overlayApplyRaf?: number;
   private menuPanel?: MenuPanel;
-  private viewModeSwitcher?: ViewModeSwitcher;
   private controlsDock?: ControlsDock;
   private arrowButtons?: ArrowButtons;
   private resizeHandle?: HTMLDivElement;
@@ -226,18 +224,10 @@ export class ViewerRenderer {
         pageQueryParam: this.pageQueryParam
       });
     }
-    if (
-      !this.viewModeSwitcher &&
-      !this.lockLayoutMode &&
-      !this.hidden.has("viewMode")
-    ) {
-      this.viewModeSwitcher = new ViewModeSwitcher(this.callbacks, this.i18n);
-    }
     if (!this.controlsDock) {
       this.controlsDock = new ControlsDock(
         this.callbacks,
         this.i18n,
-        resolveMascot(this.mascot, "menu"),
         this.hidden,
         this.lockLayoutMode
       );
@@ -250,7 +240,6 @@ export class ViewerRenderer {
     }
     const stageEl = this.pageStage.getElement();
     const menuPanelEl = this.menuPanel.getElement();
-    const viewModeSwitcherEl = this.viewModeSwitcher?.getElement();
     const controlsDockEl = this.controlsDock.getElement();
     const settingsEl = this.controlsDock.getSettingsElement();
     const notificationsEl = this.notifications.getElement();
@@ -261,7 +250,6 @@ export class ViewerRenderer {
       if (
         child !== stageEl &&
         child !== menuPanelEl &&
-        child !== viewModeSwitcherEl &&
         child !== controlsDockEl &&
         child !== settingsEl &&
         child !== this.splash &&
@@ -314,9 +302,6 @@ export class ViewerRenderer {
       this.root.appendChild(menuPanelEl);
     }
 
-    if (viewModeSwitcherEl && viewModeSwitcherEl.parentNode !== this.root) {
-      this.root.appendChild(viewModeSwitcherEl);
-    }
     if (controlsDockEl.parentNode !== this.root) {
       this.root.appendChild(controlsDockEl);
     }
@@ -328,7 +313,6 @@ export class ViewerRenderer {
     }
 
     this.menuPanel.update(renderState);
-    this.viewModeSwitcher?.update(renderState);
     this.controlsDock.update(renderState, this.isMobileViewport());
     this.notifications.update(state);
 

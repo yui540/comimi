@@ -53,6 +53,11 @@ export const menuPanelStyles = `
   cursor: pointer;
 }
 
+/* マスコット（右上 20px + 幅 50px）にタイトルが重ならないよう右側を空ける */
+.comimi-menu-panel[data-mascot="true"] .comimi-menu-top {
+  padding-right: 78px;
+}
+
 .comimi-menu-button {
   position: relative;
   width: 34px;

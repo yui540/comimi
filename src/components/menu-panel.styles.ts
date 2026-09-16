@@ -3,7 +3,7 @@ export const menuPanelStyles = `
   position: absolute;
   top: 24px;
   left: 24px;
-  width: 420px;
+  width: 500px;
   z-index: 5;
   pointer-events: auto;
   transition:

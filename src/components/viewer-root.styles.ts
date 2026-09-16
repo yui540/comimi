@@ -87,7 +87,7 @@ export const viewerRootStyles = `
   --comimi-surface-2: #3a3a3c;
   --comimi-surface-3: #323234;
   --comimi-fg: #ededed;
-  --comimi-muted: #9a9a9a;
+  --comimi-muted: #b3b3b3;
   --comimi-soft: #7e7e82;
   --comimi-faint: #6a6a6e;
   --comimi-placeholder: #555558;

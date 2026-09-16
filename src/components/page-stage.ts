@@ -26,6 +26,7 @@ export interface PageStageOptions {
   loadingMascot?: MascotOption;
   /** 読み込み失敗アイコンのカスタム（解決済み） */
   errorMascot?: MascotOption;
+  onPageLoadError?: (pageIndex: number) => void;
 }
 
 interface CachedSlot {
@@ -198,6 +199,7 @@ export class PageStage {
           this.options.errorMascot
         )
       );
+      this.options.onPageLoadError?.(pageIndex);
     });
     img.addEventListener("contextmenu", (event) => event.preventDefault());
     slot.append(img);
@@ -237,6 +239,7 @@ export class PageStage {
             this.options.errorMascot
           )
         );
+        this.options.onPageLoadError?.(pageIndex);
       });
 
     return { slot, img };

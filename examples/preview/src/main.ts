@@ -87,7 +87,7 @@ const pages: MangaPage[] = [...imagePages, linkPage, outroPage];
 
 const container = mountPreviewShell("index");
 
-createMangaViewer(container, {
+const viewer = createMangaViewer(container, {
   manga: {
     id: "sample-comic",
     title: "モノクロ世界にようこそ",
@@ -127,3 +127,5 @@ createMangaViewer(container, {
     return page.src;
   }
 });
+
+Object.assign(window, { comimiViewer: viewer });

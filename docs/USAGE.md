@@ -54,24 +54,53 @@ viewer.destroy();
 
 ```ts
 interface MangaViewerInstance {
+  // ライフサイクル・作品
   destroy(): void;
+  getElement(): HTMLElement;                 // ルート要素（.comimi-root）
   setManga(manga: Manga): Promise<void>;
   setPages(pages: MangaPage[]): Promise<void>;
   getState(): Readonly<ViewerState>;
-  updateSettings(settings: Partial<ViewerSettings>): Promise<void>;
-  goToPage(pageIndex: number): void;
+  getCurrentPageIndex(): number;
+  getPageCount(): number;
+  isMobileViewport(): boolean;               // 767px 以下なら true
+
+  // ページ移動
+  goToPage(pageIndex: number): void;         // 範囲外はクランプ
   nextPage(): void;
   previousPage(): void;
-  toggleOverlay(force?: boolean): void;
-  toggleAutoPageTurn(): void;
+
+  // 設定・表示
+  updateSettings(settings: Partial<ViewerSettings>): Promise<void>;
+  setLayoutMode(layoutMode: LayoutMode): Promise<void>;  // lockLayoutMode 時は無視
   toggleFullscreen(): Promise<void>;
-  toggleFavorite(pageIndex: number): boolean;
-  on<T extends ViewerEventName>(
-    eventName: T,
-    handler: ViewerEventHandler<T>
-  ): () => void;
+  toggleOverlay(force?: boolean): void;
+  setOverlayVisible(visible: boolean): void;
+  setPanel(panel: ViewerPanel): void;        // "none" | "settings" | "menu" | "pages" | "favorites" | "shortcuts" | "share" | "about"
+  toggleAutoPageTurn(): void;
+  setAutoPageTurn(enabled: boolean): void;
+  setZoom(scale: number, panX?: number, panY?: number): void;  // zoom.min〜max にクランプ
+  resetZoom(): void;
+
+  // ここすき！
+  toggleFavorite(pageIndex: number): boolean;   // 登録されたら true
+  addFavorite(pageIndex: number): boolean;      // 新規登録なら true、登録済みなら false
+  removeFavorite(pageIndex: number): boolean;   // 外したら true、未登録なら false
+  isFavorite(pageIndex: number): boolean;
+  getFavoritePageIds(): string[];               // コピーを返す
+  setFavorites(pageIds: string[]): void;        // 存在しない id は無視、重複は除去
+  clearFavorites(): void;
+
+  // 通知・イベント
+  notify(message: string, tone?: "info" | "success" | "error"): void;
+  on<T extends ViewerEventName>(eventName: T, handler: ViewerEventHandler<T>): () => void;
+  once<T extends ViewerEventName>(eventName: T, handler: ViewerEventHandler<T>): () => void;
 }
 ```
+
+- `goToPage` / `nextPage` / `previousPage` は自動再生中でも動作します（UI からの操作だけが自動再生中は無効化されます）。
+- `setLayoutMode("nativeFullscreen")` は Fullscreen API を要求し、拒否された場合は `browserFullscreen` にフォールバックします。ユーザー操作起点でない呼び出しはブラウザに拒否されることがあります。
+- `setPanel` で `"none"` 以外を指定するとオーバーレイも表示されます。
+- `notify` のトーストは 1.5 秒で消え、同時に表示されるのは 1 件です。
 
 ### オプション
 
@@ -533,19 +562,33 @@ createMangaViewer(container, {
 
 ```ts
 interface ViewerEventMap {
-  ready: { manga: Manga };
-  pageChange: { pageIndex: number; page: MangaPage };
-  settingsChange: { settings: ViewerSettings };
-  layoutChange: { layoutMode: LayoutMode };
+  ready: { manga: Manga };                                  // 初期化完了（保存値の復元後）
+  mangaChange: { manga: Manga };                            // setManga / setPages で作品が差し替わった
+  pageChange: { pageIndex: number; page: MangaPage };      // 現在ページが変わった
+  settingsChange: { settings: ViewerSettings };            // updateSettings で設定が変わった
+  layoutChange: { layoutMode: LayoutMode };                // 表示モードが変わった
+  overlayChange: { visible: boolean };                     // オーバーレイの表示/非表示
+  panelChange: { panel: ViewerPanel };                     // パネル（メニュー・設定など）の開閉
+  autoPageTurnChange: { enabled: boolean };                // 自動再生の開始/停止
+  zoomChange: { scale: number; panX: number; panY: number }; // ズーム倍率・パン位置の変化（パン中は連続発火）
+  favoritesChange: { pageIds: string[]; pageId?: string; added?: boolean }; // ここすき！の変更
+  notification: { message: string; tone: "info" | "success" | "error" };   // トーストが表示された
+  pageLoadError: { pageIndex: number; page: MangaPage };   // ページ画像の取得・読み込み失敗
   destroy: void;
 }
 ```
+
+- `favoritesChange` の `pageId` / `added` は 1 ページ分の変更（長押し・`toggleFavorite` / `addFavorite` / `removeFavorite`）のときだけ入り、`setFavorites` / `clearFavorites` による一括変更や作品切り替え時の復元では省略されます。
+- `zoomChange` はドラッグでのパン中に高頻度で発火するので、重い処理を繋ぐ場合は間引いてください。
+- `pageLoadError` は `resolvePageSrc` の reject と `<img>` の `error` の両方で発火します。
 
 初期登録は `options.events`、後付け／解除は以下：
 
 ```ts
 const off = viewer.on("layoutChange", ({ layoutMode }) => { ... });
 off(); // 解除
+
+viewer.once("ready", ({ manga }) => { ... }); // 一度だけ
 ```
 
 ## ディレクトリ構成

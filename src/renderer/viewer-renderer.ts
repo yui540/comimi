@@ -144,7 +144,9 @@ export class ViewerRenderer {
       isMobileViewport: () => this.isMobileViewport(),
       resolvePageSrc: options.resolvePageSrc,
       loadingMascot: resolveMascot(this.mascot, "loading"),
-      errorMascot: resolveMascot(this.mascot, "error")
+      errorMascot: resolveMascot(this.mascot, "error"),
+      onPageLoadError: (pageIndex) =>
+        this.callbacks.reportPageLoadError(pageIndex)
     });
     this.root = createViewerRoot({ className: options.className });
     this.container.replaceChildren(this.root);
@@ -843,7 +845,7 @@ export class ViewerRenderer {
       this.touchStart = undefined;
       this.suppressNextClick = true;
       this.setStageDragOffset(0, true);
-      this.callbacks.addFavorite(pageIndex);
+      this.callbacks.pressFavorite(pageIndex);
       const rect = this.root.getBoundingClientRect();
       this.root.append(
         renderFavoriteBurst(clientX - rect.left, clientY - rect.top)

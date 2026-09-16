@@ -3,7 +3,7 @@ export const menuPanelStyles = `
   position: absolute;
   top: 24px;
   left: 24px;
-  width: 420px;
+  width: 500px;
   z-index: 5;
   pointer-events: auto;
   transition:
@@ -51,6 +51,11 @@ export const menuPanelStyles = `
   color: inherit;
   text-align: left;
   cursor: pointer;
+}
+
+/* マスコット（右上 20px + 幅 50px）にタイトルが重ならないよう右側を空ける */
+.comimi-menu-panel[data-mascot="true"] .comimi-menu-top {
+  padding-right: 78px;
 }
 
 .comimi-menu-button {

@@ -17,9 +17,12 @@ import type {
   MangaPage,
   MangaViewerInstance,
   MangaViewerOptions,
+  NotificationTone,
   ViewerEventHandler,
+  ViewerEventMap,
   ViewerEventHandlersMap,
   ViewerEventName,
+  ViewerPanel,
   ViewerSettings,
   ViewerState
 } from "../types";
@@ -182,8 +185,14 @@ export class MangaViewerCore implements MangaViewerInstance {
       setPan: (panX, panY) => this.store.dispatch({ type: "setPan", panX, panY }),
       resetZoom: () => this.store.dispatch({ type: "resetZoom" }),
       notify: (message, tone) => this.notify(message, tone),
-      addFavorite: (pageIndex) => this.addFavorite(pageIndex),
-      removeFavorite: (pageIndex) => this.removeFavorite(pageIndex)
+      pressFavorite: (pageIndex) => this.pressFavorite(pageIndex),
+      removeFavorite: (pageIndex) => this.removeFavorite(pageIndex),
+      reportPageLoadError: (pageIndex) => {
+        const page = this.store.getState().manga.pages[pageIndex];
+        if (page) {
+          this.events.emit("pageLoadError", { pageIndex, page });
+        }
+      }
     };
 
     this.renderer = new ViewerRenderer(this.container, {
@@ -246,6 +255,9 @@ export class MangaViewerCore implements MangaViewerInstance {
     // 作品ごと設定を新しい作品のものへ切り替える（保存値が無ければデフォルト）。
     await this.applyMangaSettings(manga.id);
     await this.applyFavorites(manga.id);
+    if (!this.destroyed) {
+      this.events.emit("mangaChange", { manga: this.store.getState().manga });
+    }
   }
 
   private async applyFavorites(mangaId: string): Promise<void> {
@@ -282,8 +294,53 @@ export class MangaViewerCore implements MangaViewerInstance {
           this.notifyFavoriteAdded(false);
         }
       });
-    this.events.emit("favoritesChange", { pageIds: next });
+    this.events.emit("favoritesChange", { pageIds: next, pageId: page.id, added });
     return added;
+  }
+
+  addFavorite(pageIndex: number): boolean {
+    if (this.isFavorite(pageIndex)) {
+      return false;
+    }
+    return this.toggleFavorite(pageIndex);
+  }
+
+  removeFavorite(pageIndex: number): boolean {
+    if (!this.isFavorite(pageIndex)) {
+      return false;
+    }
+    this.toggleFavorite(pageIndex);
+    return true;
+  }
+
+  isFavorite(pageIndex: number): boolean {
+    const state = this.store.getState();
+    const page = state.manga.pages[pageIndex];
+    return !!page && state.favoritePageIds.includes(page.id);
+  }
+
+  getFavoritePageIds(): string[] {
+    return [...this.store.getState().favoritePageIds];
+  }
+
+  setFavorites(pageIds: string[]): void {
+    const state = this.store.getState();
+    const known = new Set(state.manga.pages.map((page) => page.id));
+    const next = [...new Set(pageIds.filter((id) => known.has(id)))];
+    const current = state.favoritePageIds;
+    if (
+      next.length === current.length &&
+      next.every((id, index) => id === current[index])
+    ) {
+      return;
+    }
+    this.store.dispatch({ type: "setFavorites", pageIds: next });
+    void this.storage.saveFavorites(state.manga.id, next);
+    this.events.emit("favoritesChange", { pageIds: next });
+  }
+
+  clearFavorites(): void {
+    this.setFavorites([]);
   }
 
   private notifyFavoriteAdded(persisted: boolean): void {
@@ -293,21 +350,12 @@ export class MangaViewerCore implements MangaViewerInstance {
     );
   }
 
-  private removeFavorite(pageIndex: number): void {
-    const state = this.store.getState();
-    const page = state.manga.pages[pageIndex];
-    if (!page || !state.favoritePageIds.includes(page.id)) {
-      return;
-    }
-    this.toggleFavorite(pageIndex);
-  }
-
   // ロングタップ用。登録済みでも演出とトーストは出したいので、解除はせず登録だけ行う。
-  private addFavorite(pageIndex: number): boolean {
+  private pressFavorite(pageIndex: number): void {
     const state = this.store.getState();
     const page = state.manga.pages[pageIndex];
     if (!page) {
-      return false;
+      return;
     }
     if (state.favoritePageIds.includes(page.id)) {
       this.storage
@@ -318,9 +366,9 @@ export class MangaViewerCore implements MangaViewerInstance {
         .catch(() => {
           if (!this.destroyed) this.notifyFavoriteAdded(false);
         });
-      return false;
+      return;
     }
-    return this.toggleFavorite(pageIndex);
+    this.toggleFavorite(pageIndex);
   }
 
   async setPages(pages: MangaPage[]): Promise<void> {
@@ -332,6 +380,34 @@ export class MangaViewerCore implements MangaViewerInstance {
 
   getState(): Readonly<ViewerState> {
     return this.store.getState();
+  }
+
+  getElement(): HTMLElement {
+    return this.renderer.getElement();
+  }
+
+  getCurrentPageIndex(): number {
+    return this.store.getState().currentPageIndex;
+  }
+
+  getPageCount(): number {
+    return this.store.getState().manga.pages.length;
+  }
+
+  isMobileViewport(): boolean {
+    return this.renderer.isMobileViewport();
+  }
+
+  setPanel(panel: ViewerPanel): void {
+    this.store.dispatch({ type: "setPanel", panel });
+  }
+
+  setZoom(scale: number, panX?: number, panY?: number): void {
+    this.store.dispatch({ type: "setZoom", scale, panX, panY });
+  }
+
+  resetZoom(): void {
+    this.store.dispatch({ type: "resetZoom" });
   }
 
   async updateSettings(settings: Partial<ViewerSettings>): Promise<void> {
@@ -448,12 +524,22 @@ export class MangaViewerCore implements MangaViewerInstance {
     this.store.dispatch({ type: "setOverlayVisible", visible });
   }
 
+  setOverlayVisible(visible: boolean): void {
+    this.toggleOverlay(visible);
+  }
+
   toggleAutoPageTurn(): void {
     this.store.dispatch({ type: "toggleAutoPageTurn" });
     this.syncAutoTimer();
 
     const enabled = this.store.getState().autoPageTurnEnabled;
     this.notify(this.i18n.t(enabled ? "autoplay.start" : "autoplay.stop"));
+  }
+
+  setAutoPageTurn(enabled: boolean): void {
+    if (this.store.getState().autoPageTurnEnabled !== enabled) {
+      this.toggleAutoPageTurn();
+    }
   }
 
   async toggleFullscreen(): Promise<void> {
@@ -476,6 +562,17 @@ export class MangaViewerCore implements MangaViewerInstance {
     handler: ViewerEventHandler<T>
   ): () => void {
     return this.events.on(eventName, handler);
+  }
+
+  once<T extends ViewerEventName>(
+    eventName: T,
+    handler: ViewerEventHandler<T>
+  ): () => void {
+    const off = this.events.on(eventName, ((payload: ViewerEventMap[T]) => {
+      off();
+      handler(payload);
+    }) as ViewerEventHandler<T>);
+    return off;
   }
 
   private async bootstrap(): Promise<void> {
@@ -748,7 +845,7 @@ export class MangaViewerCore implements MangaViewerInstance {
     }
   }
 
-  private async setLayoutMode(layoutMode: LayoutMode): Promise<void> {
+  async setLayoutMode(layoutMode: LayoutMode): Promise<void> {
     if (this.lockLayoutMode) return;
     if (layoutMode === "nativeFullscreen") {
       try {
@@ -793,6 +890,9 @@ export class MangaViewerCore implements MangaViewerInstance {
   private afterStateChange(state: ViewerState, previous: ViewerState): void {
     if (state.autoPageTurnEnabled !== previous.autoPageTurnEnabled) {
       this.syncAutoTimer();
+      this.events.emit("autoPageTurnChange", {
+        enabled: state.autoPageTurnEnabled
+      });
     }
     if (state.layout.mode !== previous.layout.mode) {
       this.syncBodyScrollLock(state.layout.mode);
@@ -802,6 +902,23 @@ export class MangaViewerCore implements MangaViewerInstance {
       state.panel !== previous.panel
     ) {
       this.syncOverlayAutoHide();
+    }
+    if (state.overlayVisible !== previous.overlayVisible) {
+      this.events.emit("overlayChange", { visible: state.overlayVisible });
+    }
+    if (state.panel !== previous.panel) {
+      this.events.emit("panelChange", { panel: state.panel });
+    }
+    if (
+      state.zoomScale !== previous.zoomScale ||
+      state.panX !== previous.panX ||
+      state.panY !== previous.panY
+    ) {
+      this.events.emit("zoomChange", {
+        scale: state.zoomScale,
+        panX: state.panX,
+        panY: state.panY
+      });
     }
   }
 
@@ -882,10 +999,7 @@ export class MangaViewerCore implements MangaViewerInstance {
     });
   }
 
-  private notify(
-    message: string,
-    tone: "info" | "success" | "error" = "info"
-  ): void {
+  notify(message: string, tone: NotificationTone = "info"): void {
     window.clearTimeout(this.notificationTimer);
 
     const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -902,5 +1016,6 @@ export class MangaViewerCore implements MangaViewerInstance {
     this.notificationTimer = window.setTimeout(() => {
       this.store.dispatch({ type: "removeNotification", id });
     }, 1500);
+    this.events.emit("notification", { message, tone });
   }
 }

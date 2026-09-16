@@ -134,6 +134,7 @@ export class MenuPanel {
       this.viewAbout
     );
     const mascot = renderRabbitMascot(this.options.mascot);
+    this.root.dataset.mascot = String(mascot !== null);
     const children: Node[] = [background];
     if (mascot) children.push(mascot);
     children.push(top, this.bottomEl);

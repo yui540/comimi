@@ -192,21 +192,54 @@ export type PageSrcResolver = (
   context: PageSrcContext
 ) => string | Promise<string>;
 
+export type ViewerPanel = ViewerState["panel"];
+export type NotificationTone = NonNullable<ViewerNotification["tone"]>;
+
 export interface MangaViewerInstance {
   destroy(): void;
+  /** ビューワーのルート要素（`.comimi-root`）。 */
+  getElement(): HTMLElement;
   setManga(manga: Manga): Promise<void>;
   setPages(pages: MangaPage[]): Promise<void>;
   getState(): Readonly<ViewerState>;
+  getCurrentPageIndex(): number;
+  getPageCount(): number;
   updateSettings(settings: Partial<ViewerSettings>): Promise<void>;
   goToPage(pageIndex: number): void;
   nextPage(): void;
   previousPage(): void;
   toggleOverlay(force?: boolean): void;
+  setOverlayVisible(visible: boolean): void;
   toggleAutoPageTurn(): void;
+  setAutoPageTurn(enabled: boolean): void;
   toggleFullscreen(): Promise<void>;
+  /** 表示モードを切り替える。`lockLayoutMode` 指定時は何もしない。 */
+  setLayoutMode(layoutMode: LayoutMode): Promise<void>;
+  /** メニュー・設定などのパネルを開閉する。`"none"` で閉じる。 */
+  setPanel(panel: ViewerPanel): void;
+  /** ズーム倍率（`settings.zoom` の範囲にクランプ）とパン位置を設定する。 */
+  setZoom(scale: number, panX?: number, panY?: number): void;
+  resetZoom(): void;
   /** 指定ページの「ここすき！」を切り替える。登録されたら true を返す。 */
   toggleFavorite(pageIndex: number): boolean;
+  /** 「ここすき！」に登録する。新たに登録したら true、登録済みなら false。 */
+  addFavorite(pageIndex: number): boolean;
+  /** 「ここすき！」から外す。外したら true、未登録なら false。 */
+  removeFavorite(pageIndex: number): boolean;
+  isFavorite(pageIndex: number): boolean;
+  getFavoritePageIds(): string[];
+  /** 一覧をまるごと置き換える。存在しないページ id は無視される。 */
+  setFavorites(pageIds: string[]): void;
+  clearFavorites(): void;
+  /** トースト通知を表示する。 */
+  notify(message: string, tone?: NotificationTone): void;
+  isMobileViewport(): boolean;
   on<T extends ViewerEventName>(
+    eventName: T,
+    handler: ViewerEventHandler<T>
+  ): () => void;
+  /** 一度だけ受け取るハンドラを登録する。 */
+  once<T extends ViewerEventName>(
     eventName: T,
     handler: ViewerEventHandler<T>
   ): () => void;
@@ -214,10 +247,25 @@ export interface MangaViewerInstance {
 
 export interface ViewerEventMap {
   ready: { manga: Manga };
+  /** `setManga` / `setPages` で作品が差し替わったとき。 */
+  mangaChange: { manga: Manga };
   pageChange: { pageIndex: number; page: MangaPage };
   settingsChange: { settings: ViewerSettings };
   layoutChange: { layoutMode: LayoutMode };
-  favoritesChange: { pageIds: string[] };
+  overlayChange: { visible: boolean };
+  panelChange: { panel: ViewerPanel };
+  autoPageTurnChange: { enabled: boolean };
+  /** ズーム倍率かパン位置が変わるたびに発火する（パン中は連続して発火）。 */
+  zoomChange: { scale: number; panX: number; panY: number };
+  /**
+   * 「ここすき！」一覧が変わったとき。`pageId` / `added` は 1 ページ分の
+   * 変更のときだけ入る（`setFavorites` などの一括変更では省略）。
+   */
+  favoritesChange: { pageIds: string[]; pageId?: string; added?: boolean };
+  /** トースト通知が表示されたとき。 */
+  notification: { message: string; tone: NotificationTone };
+  /** ページ画像の取得・読み込みに失敗したとき。 */
+  pageLoadError: { pageIndex: number; page: MangaPage };
   destroy: void;
 }
 

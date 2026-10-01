@@ -206,10 +206,6 @@ export class PageStage {
 
     const imageKey = `${state.manga.id}:${page.id}`;
     const cachedSource = this.imageSources.get(imageKey);
-    if (cachedSource) {
-      img.src = cachedSource;
-      return { slot, img };
-    }
 
     const loading = renderLoadingIcon(
       this.options.i18n,
@@ -218,18 +214,27 @@ export class PageStage {
     slot.append(loading);
     img.style.visibility = "hidden";
 
+    const showImage = (src: string): void => {
+      img.addEventListener(
+        "load",
+        () => {
+          img.style.visibility = "";
+          loading.remove();
+        },
+        { once: true }
+      );
+      img.src = src;
+    };
+
+    if (cachedSource) {
+      // `imageSources` stores the resolved URL, not a finished load, so the
+      // loading icon must remain until the image actually fires `load`.
+      showImage(cachedSource);
+      return { slot, img };
+    }
+
     this.resolveSource(state, page, pageIndex, isSpread)
-      .then((src) => {
-        img.addEventListener(
-          "load",
-          () => {
-            img.style.visibility = "";
-            loading.remove();
-          },
-          { once: true }
-        );
-        img.src = src;
-      })
+      .then(showImage)
       .catch(() => {
         loading.remove();
         slot.replaceChildren(
